@@ -1,0 +1,656 @@
+/* ==========================================================================
+   EX NIHILO - DEFAULT & ELEMENT STYLES
+   Base: Montserrat | Palette: Cosmos Dark & Neon Accents
+   ========================================================================== */
+
+:root {
+  /* Paleta Cósmica Base */
+  --cosmos-black: #000000;
+  --cosmos-surface: #0a0a12;
+  --cosmos-surface-elevated: #12121f;
+  --cosmos-border: rgba(255, 255, 255, 0.14);
+  --cosmos-border-focus: #ff751f;
+
+  /* Cores Temáticas Ex Nihilo */
+  --cosmos-blue: #1800ad;
+  --cosmos-red: #ff3131;
+  --cosmos-orange: #ff751f;
+  --cosmos-yellow: #ffde59;
+  --cosmos-white: #ffffff;
+  --cosmos-muted: rgba(255, 255, 255, 0.65);
+
+  /* Tipografia e Espaçamento */
+  --font-main: 'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'Fira Code', 'JetBrains Mono', monospace;
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --transition-smooth: 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ==========================================================================
+   1. RESET & BASE DEFAULTS
+   ========================================================================== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--cosmos-black);
+  color: var(--cosmos-white);
+  font-family: var(--font-main);
+  font-weight: 400;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+::selection {
+  background-color: var(--cosmos-orange);
+  color: var(--cosmos-black);
+}
+
+/* Scrollbar Personalizada */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--cosmos-black);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--cosmos-orange);
+}
+
+/* ==========================================================================
+   2. TIPOGRAFIA & TEXTOS
+   ========================================================================== */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 0.75em;
+  color: var(--cosmos-white);
+}
+
+h1 {
+  font-size: clamp(2rem, 4vw, 3.25rem);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+h2 {
+  font-size: clamp(1.5rem, 3vw, 2.25rem);
+}
+
+h3 {
+  font-size: clamp(1.25rem, 2vw, 1.65rem);
+}
+
+h4 { font-size: 1.2rem; }
+h5 { font-size: 1rem; }
+h6 { font-size: 0.875rem; color: var(--cosmos-muted); }
+
+p {
+  margin-bottom: 1.15rem;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+strong, b {
+  font-weight: 700;
+  color: var(--cosmos-white);
+}
+
+em, i {
+  font-style: italic;
+}
+
+small {
+  font-size: 0.825rem;
+  color: var(--cosmos-muted);
+}
+
+mark {
+  background-color: rgba(255, 222, 89, 0.2);
+  color: var(--cosmos-yellow);
+  padding: 0.1em 0.35em;
+  border-radius: var(--radius-sm);
+}
+
+a {
+  color: var(--cosmos-yellow);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: color var(--transition-smooth), border-color var(--transition-smooth);
+}
+
+a:hover {
+  color: var(--cosmos-orange);
+  border-bottom-color: var(--cosmos-orange);
+}
+
+hr {
+  border: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--cosmos-border), transparent);
+  margin: 2rem 0;
+}
+
+blockquote {
+  border-left: 3px solid var(--cosmos-orange);
+  background: var(--cosmos-surface);
+  padding: 1rem 1.25rem;
+  margin: 1.5rem 0;
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+code, pre, kbd, samp {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+
+code {
+  background: var(--cosmos-surface-elevated);
+  color: var(--cosmos-yellow);
+  padding: 0.15em 0.4em;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--cosmos-border);
+}
+
+pre {
+  background: var(--cosmos-surface);
+  padding: 1.25rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--cosmos-border);
+  overflow-x: auto;
+  margin-bottom: 1.5rem;
+}
+
+pre code {
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: var(--cosmos-white);
+}
+
+/* ==========================================================================
+   3. LISTAS
+   ========================================================================== */
+ul, ol {
+  margin-bottom: 1.25rem;
+  padding-left: 1.5rem;
+}
+
+li {
+  margin-bottom: 0.45rem;
+}
+
+ul li::marker {
+  color: var(--cosmos-orange);
+}
+
+ol li::marker {
+  color: var(--cosmos-yellow);
+  font-weight: 600;
+}
+
+dl {
+  margin-bottom: 1.5rem;
+}
+
+dt {
+  font-weight: 700;
+  color: var(--cosmos-yellow);
+  margin-top: 0.75rem;
+}
+
+dd {
+  margin-left: 1rem;
+  color: var(--cosmos-muted);
+}
+
+/* ==========================================================================
+   4. FORMULÁRIOS & CONTROLES INTERATIVOS
+   ========================================================================== */
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+fieldset {
+  border: 1px solid var(--cosmos-border);
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  background: rgba(10, 10, 18, 0.6);
+}
+
+legend {
+  padding: 0 0.65rem;
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--cosmos-orange);
+}
+
+label {
+  display: inline-block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  margin-bottom: 0.45rem;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="submit"]):not([type="button"]):not([type="reset"]),
+select,
+textarea {
+  width: 100%;
+  background-color: var(--cosmos-surface);
+  color: var(--cosmos-white);
+  font-family: var(--font-main);
+  font-size: 0.95rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--cosmos-border);
+  border-radius: var(--radius-md);
+  outline: none;
+  transition: border-color var(--transition-smooth), box-shadow var(--transition-smooth), background-color var(--transition-smooth);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--cosmos-orange);
+  background-color: var(--cosmos-surface-elevated);
+  box-shadow: 0 0 0 3px rgba(255, 117, 31, 0.22);
+}
+
+input:disabled,
+select:disabled,
+textarea:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+input:invalid:not(:placeholder-shown) {
+  border-color: var(--cosmos-red);
+}
+
+textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+
+/* Select customizado */
+select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23ff751f' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 12px;
+  padding-right: 2.5rem;
+  cursor: pointer;
+}
+
+/* Checkbox & Radio */
+input[type="checkbox"],
+input[type="radio"] {
+  appearance: none;
+  width: 1.15rem;
+  height: 1.15rem;
+  background-color: var(--cosmos-surface);
+  border: 1px solid var(--cosmos-border);
+  display: inline-grid;
+  place-content: center;
+  cursor: pointer;
+  vertical-align: middle;
+  margin-right: 0.5rem;
+  transition: all var(--transition-smooth);
+}
+
+input[type="checkbox"] {
+  border-radius: var(--radius-sm);
+}
+
+input[type="radio"] {
+  border-radius: 50%;
+}
+
+input[type="checkbox"]:checked,
+input[type="radio"]:checked {
+  background-color: var(--cosmos-orange);
+  border-color: var(--cosmos-orange);
+}
+
+input[type="checkbox"]:checked::before {
+  content: "";
+  width: 0.6rem;
+  height: 0.6rem;
+  background-color: var(--cosmos-black);
+  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+}
+
+input[type="radio"]:checked::before {
+  content: "";
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background-color: var(--cosmos-black);
+}
+
+/* Range Slider */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  background: var(--cosmos-surface-elevated);
+  border-radius: 999px;
+  border: 1px solid var(--cosmos-border);
+  outline: none;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--cosmos-orange);
+  border: 2px solid var(--cosmos-white);
+  cursor: pointer;
+  transition: transform var(--transition-smooth), background var(--transition-smooth);
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.18);
+  background: var(--cosmos-yellow);
+}
+
+/* Color & File Inputs */
+input[type="color"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 3rem;
+  height: 2.25rem;
+  background: var(--cosmos-surface);
+  border: 1px solid var(--cosmos-border);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+  cursor: pointer;
+}
+
+input[type="file"] {
+  font-size: 0.875rem;
+  color: var(--cosmos-muted);
+}
+
+input[type="file"]::file-selector-button {
+  background: var(--cosmos-surface-elevated);
+  color: var(--cosmos-white);
+  border: 1px solid var(--cosmos-border);
+  padding: 0.55rem 1rem;
+  border-radius: var(--radius-md);
+  font-family: var(--font-main);
+  font-weight: 600;
+  margin-right: 1rem;
+  cursor: pointer;
+  transition: all var(--transition-smooth);
+}
+
+input[type="file"]::file-selector-button:hover {
+  border-color: var(--cosmos-orange);
+  color: var(--cosmos-orange);
+}
+
+/* ==========================================================================
+   5. BOTÕES
+   ========================================================================== */
+button,
+input[type="submit"],
+input[type="button"],
+input[type="reset"] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-family: var(--font-main);
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.8rem 1.6rem;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--cosmos-white);
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: all var(--transition-smooth);
+}
+
+button:hover,
+input[type="submit"]:hover,
+input[type="button"]:hover {
+  background: var(--cosmos-orange);
+  border-color: var(--cosmos-orange);
+  color: var(--cosmos-black);
+  box-shadow: 0 0 20px rgba(255, 117, 31, 0.4);
+  transform: translateY(-1px);
+}
+
+button:active,
+input[type="submit"]:active {
+  transform: translateY(0);
+}
+
+
+/*
+button[type="reset"],
+input[type="reset"] {
+  border-color: rgba(255, 49, 49, 0.4);
+  color: var(--cosmos-red);
+} */
+
+button[type="reset"]:hover,
+input[type="reset"]:hover {
+  background: var(--cosmos-red);
+  color: var(--cosmos-white);
+  box-shadow: 0 0 18px rgba(255, 49, 49, 0.4);
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ==========================================================================
+   6. TABELAS
+   ========================================================================== */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1.75rem;
+  background: var(--cosmos-surface);
+  border: 1px solid var(--cosmos-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  font-size: 0.925rem;
+}
+
+caption {
+  caption-side: top;
+  text-align: left;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.85rem;
+  color: var(--cosmos-muted);
+  margin-bottom: 0.6rem;
+}
+
+thead {
+  background: var(--cosmos-surface-elevated);
+  border-bottom: 1px solid var(--cosmos-border);
+}
+
+th {
+  text-align: left;
+  padding: 0.9rem 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  color: var(--cosmos-yellow);
+}
+
+td {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  color: rgba(255, 255, 255, 0.88);
+}
+
+tbody tr {
+  transition: background-color var(--transition-smooth);
+}
+
+tbody tr:hover {
+  background-color: rgba(255, 117, 31, 0.08);
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* ==========================================================================
+   7. ELEMENTOS SEMÂNTICOS, MÍDIA & FEEDBACK
+   ========================================================================== */
+img, video, canvas, svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+figure {
+  margin: 1.5rem 0;
+  background: var(--cosmos-surface);
+  border: 1px solid var(--cosmos-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+figcaption {
+  padding: 0.75rem 1rem;
+  font-size: 0.85rem;
+  color: var(--cosmos-muted);
+  border-top: 1px solid var(--cosmos-border);
+}
+
+details {
+  background: var(--cosmos-surface);
+  border: 1px solid var(--cosmos-border);
+  border-radius: var(--radius-md);
+  padding: 0.9rem 1.2rem;
+  margin-bottom: 1rem;
+  transition: border-color var(--transition-smooth);
+}
+
+details[open] {
+  border-color: var(--cosmos-orange);
+}
+
+summary {
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--cosmos-white);
+}
+
+summary::-webkit-details-marker {
+  display: none;
+}
+
+summary::after {
+  content: "+";
+  color: var(--cosmos-orange);
+  font-size: 1.25rem;
+  font-weight: 700;
+  transition: transform var(--transition-smooth);
+}
+
+details[open] summary::after {
+  content: "−";
+}
+
+details > *:not(summary) {
+  margin-top: 0.85rem;
+}
+
+dialog {
+  background: var(--cosmos-surface-elevated);
+  color: var(--cosmos-white);
+  border: 1px solid var(--cosmos-border);
+  border-radius: var(--radius-lg);
+  padding: 1.75rem;
+  max-width: 520px;
+  width: 90%;
+  margin: auto;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.85);
+}
+
+dialog::backdrop {
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(6px);
+}
+
+progress, meter {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--cosmos-surface-elevated);
+  border: 1px solid var(--cosmos-border);
+}
+
+progress::-webkit-progress-bar {
+  background: var(--cosmos-surface-elevated);
+}
+
+progress::-webkit-progress-value {
+  background: linear-gradient(90deg, var(--cosmos-blue), var(--cosmos-orange), var(--cosmos-yellow));
+}
