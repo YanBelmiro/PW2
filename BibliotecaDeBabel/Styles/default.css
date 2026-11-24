@@ -748,28 +748,28 @@ progress::-webkit-progress-value {
 }
 
 /* Roda sempre que uma nova página é aberta */
+/* Mantém a animação inicial ao carregar a página */
 .logo-animada .hex-1 {
   animation: giroHeaderAnti 1.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
-
 .logo-animada .hex-2 {
   animation: giroHeaderHorario 1.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
-
 .logo-animada .hex-3 {
   animation: giroHeaderAnti 1.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
-/* Bônus: gira novamente se o usuário passar o mouse na logo */
-.brand:hover .logo-animada .hex-1 {
+/* Roda quando a classe .girar for adicionada pelo clique */
+.brand.girar .logo-animada .hex-1 {
   animation: giroHoverAnti 1.2s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.brand:hover .logo-animada .hex-2 {
+.brand.girar .logo-animada .hex-2 {
   animation: giroHoverHorario 1.2s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.brand:hover .logo-animada .hex-3 {
+.brand.girar .logo-animada .hex-3 {
   animation: giroHoverAnti 1.2s cubic-bezier(0.22, 1, 0.36, 1);
 }
+
 
 @keyframes giroHeaderAnti {
   from { transform: rotate(0deg); }
