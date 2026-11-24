@@ -89,7 +89,7 @@ if ($stmt) {
           </div>
           <div style="display: flex; align-items: flex-end; gap: 10px;">
             <button type="submit">Pesquisar</button>
-            <a href="livros_catalogo.php" style="padding: 10px 15px; background: #6c757d; color: white; text-decoration: none; border-radius: 4px; display: inline-block;">Limpar</a>
+            <a href="livros_catalogo.php"><button type="button" class="secondary" style="border: 1px solid var(--cosmos-border);">Limpar</button></a>
           </div>
         </div>
       </form>
