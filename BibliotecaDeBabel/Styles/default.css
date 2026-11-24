@@ -731,3 +731,62 @@ progress::-webkit-progress-bar {
 progress::-webkit-progress-value {
   background: linear-gradient(90deg, var(--cosmos-blue), var(--cosmos-orange), var(--cosmos-yellow));
 }
+
+/* Garante que o SVG tenha o mesmo tamanho da antiga imagem no header */
+.logo-animada {
+  width: 42px;
+  height: 42px;
+  overflow: visible;
+  cursor: pointer;
+}
+
+.logo-animada .hex-1,
+.logo-animada .hex-2,
+.logo-animada .hex-3 {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+/* Roda sempre que uma nova página é aberta */
+.logo-animada .hex-1 {
+  animation: giroHeaderAnti 1.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.logo-animada .hex-2 {
+  animation: giroHeaderHorario 1.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.logo-animada .hex-3 {
+  animation: giroHeaderAnti 1.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Bônus: gira novamente se o usuário passar o mouse na logo */
+.brand:hover .logo-animada .hex-1 {
+  animation: giroHoverAnti 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.brand:hover .logo-animada .hex-2 {
+  animation: giroHoverHorario 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.brand:hover .logo-animada .hex-3 {
+  animation: giroHoverAnti 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes giroHeaderAnti {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(-360deg); }
+}
+
+@keyframes giroHeaderHorario {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes giroHoverAnti {
+  from { transform: rotate(-360deg); }
+  to   { transform: rotate(-720deg); }
+}
+
+@keyframes giroHoverHorario {
+  from { transform: rotate(360deg); }
+  to   { transform: rotate(720deg); }
+}

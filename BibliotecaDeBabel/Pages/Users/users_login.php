@@ -96,15 +96,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <body>
 
   <!-- HEADER -->
-  <header>
-    <div class="brand">
-      <img src="../../Images/Logo/TorreDeBabel.svg" class="logo" alt="Logo Biblioteca de Babel">
-      <p class="brand-title">BIBLIOTECA DE BABEL</p>
-    </div>
-    <nav aria-label="Navegação">
-      <a href="users_cadastro.php">Cadastre-se</a>
-    </nav>
-  </header>
+  <?php include "../../Includes/header.php"; ?>
 
   <!-- CONTENT -->
   <main class="content">

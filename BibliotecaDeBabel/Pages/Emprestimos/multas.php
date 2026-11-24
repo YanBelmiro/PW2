@@ -154,22 +154,7 @@ if ($is_admin) {
 <body>
 
   <!-- HEADER -->
-  <header>
-    <div class="brand">
-      <img src="../../Images/Logo/TorreDeBabel.svg" class="logo" alt="Logo Biblioteca de Babel">
-      <p class="brand-title">BIBLIOTECA DE BABEL</p>
-    </div>
-    <nav aria-label="Navegação">
-      <a href="../Acervo/livros_catalogo.php">Livros</a>
-      <a href="../Acervo/autores_catalogo.php">Autores</a>
-      <a href="emprestimos.php">Empréstimos</a>
-      <a href="multas.php">Multas</a>
-      <?php if ($is_admin): ?>
-        <a href="../Acervo/livros_gerencia.php">Gerenciar Acervo</a>
-      <?php endif; ?>
-      <a href="../Users/users_login.php?sair=1">Sair</a>
-    </nav>
-  </header>
+  <?php include "../../Includes/header.php"; ?>
 
   <!-- CONTENT -->
   <main class="content">
