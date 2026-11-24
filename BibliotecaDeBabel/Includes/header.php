@@ -28,6 +28,6 @@
     <?php if (isset($_SESSION["tipo_usuario"]) && $_SESSION["tipo_usuario"] === "admin"): ?>
       <a href="../Acervo/livros_gerencia.php">Gerenciar Acervo</a>
     <?php endif; ?>
-    <a href="../Users/users_login.php?sair=1">Sair</a>
+    <a href="../index.php?sair=1">Sair</a>
   </nav>
 </header>

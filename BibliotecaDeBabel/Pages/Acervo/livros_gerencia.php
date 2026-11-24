@@ -1,10 +1,12 @@
 <?php
+date_default_timezone_set("America/Sao_Paulo");
+
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
 if (!isset($_SESSION["id_usuario"])) {
-    header("Location: ../Users/users_login.php");
+    header("Location: ../index.php");
     exit;
 }
 

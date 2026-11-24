@@ -3,14 +3,6 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// O link de saída das páginas do sistema aponta para esta página.
-if (isset($_GET["sair"])) {
-    session_unset();
-    session_destroy();
-    header("Location: users_login.php");
-    exit;
-}
-
 if (isset($_SESSION["id_usuario"])) {
     if ($_SESSION["tipo_usuario"] === "admin") {
         header("Location: ../Acervo/livros_gerencia.php");
@@ -92,7 +84,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Montserrat:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" />
 
   <link rel="stylesheet" href="../../Styles/default.css" />
-
   
   <script src="../../Scripts/logo.js" defer></script>
 </head>
