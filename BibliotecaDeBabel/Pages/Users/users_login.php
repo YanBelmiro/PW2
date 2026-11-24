@@ -83,37 +83,95 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Biblioteca de Babel</title>
-    <link rel="stylesheet" href="../../Styles/default.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login - Biblioteca de Babel</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Montserrat:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="../../Styles/default.css" />
 </head>
 <body>
-    <main>
-        <h1>Biblioteca de Babel</h1>
-        <h2>Entrar</h2>
 
-        <?php if (!empty($mensagem)): ?>
-            <p><?php echo htmlspecialchars($mensagem, ENT_QUOTES, 'UTF-8'); ?></p>
-        <?php endif; ?>
+  <!-- HEADER -->
+  <header>
+    <div class="brand">
+      <img src="../../Images/Logo/TorreDeBabel.svg" class="logo" alt="Logo Biblioteca de Babel">
+      <p class="brand-title">BIBLIOTECA DE BABEL</p>
+    </div>
+    <nav aria-label="Navegação">
+      <a href="users_cadastro.php">Cadastre-se</a>
+    </nav>
+  </header>
 
-        <form action="" method="POST">
-            <p>
-                <label for="email">E-mail:</label><br>
-                <input type="email" id="email" name="email" required
-                       value="<?php echo htmlspecialchars($_POST['email'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
-            </p>
-            <p>
-                <label for="senha">Senha:</label><br>
-                <input type="password" id="senha" name="senha" required>
-            </p>
-            <button type="submit">Entrar</button>
-        </form>
+  <!-- CONTENT -->
+  <main class="content">
 
-        <p>Não possui cadastro? <a href="users_cadastro.php">Cadastre-se</a></p>
-    </main>
+    <section id="formularios" class="test-block">
+      <h2>Entrar no Sistema</h2>
+      <p>Acesse com seu e-mail e senha cadastrados para gerenciar empréstimos e o acervo[cite: 4].</p>
+
+      <?php if (!empty($mensagem)): ?>
+        <div class="test-block" style="background-color: #ffe6e6; border-left: 4px solid #ff4d4d; margin-bottom: 1.5rem; padding: 1rem;">
+          <p style="margin: 0; color: #b30000;"><strong>Aviso:</strong> <?php echo htmlspecialchars($mensagem, ENT_QUOTES, 'UTF-8'); ?></p>
+        </div>
+      <?php endif; ?>
+
+      <form action="" method="POST">
+        <fieldset>
+          <legend>Credenciais de Acesso</legend>
+
+          <div class="grid-2">
+            <div>
+              <label for="email">E-mail</label>
+              <input type="email" id="email" name="email" placeholder="email@exemplo.com" required 
+                     value="<?php echo htmlspecialchars($_POST['email'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
+            </div>
+
+            <div>
+              <label for="senha">Senha</label>
+              <input type="password" id="senha" name="senha" placeholder="Sua senha" required />
+            </div>
+          </div>
+        </fieldset>
+
+        <div id="botoes" class="inline-group" style="margin-top: 1.5rem;">
+          <button type="submit">Entrar</button>
+          <button type="button" id="open-modal-btn">Ajuda / Sobre</button>
+        </div>
+      </form>
+    </section>
+
+  </main>
+
+  <!-- MODAL DE SUPORTE / AJUDA -->
+  <dialog id="test-dialog">
+    <h3>Ajuda - Biblioteca de Babel</h3>
+    <p>Se você esqueceu sua senha ou possui problemas de acesso, procure o administrador da biblioteca responsável pela disciplina de Programação Web 2[cite: 2].</p>
+    <div class="inline-group" style="justify-content: flex-end; margin-top: 1.5rem;">
+      <button type="button" id="close-modal-btn">Fechar</button>
+    </div>
+  </dialog>
+
+  <script>
+    const dialog = document.getElementById("test-dialog");
+    const openBtn = document.getElementById("open-modal-btn");
+    const closeBtn = document.getElementById("close-modal-btn");
+
+    if (openBtn && dialog && closeBtn) {
+      openBtn.addEventListener("click", () => dialog.showModal());
+      closeBtn.addEventListener("click", () => dialog.close());
+      dialog.addEventListener("click", (e) => {
+        if (e.target === dialog) dialog.close();
+      });
+    }
+  </script>
 </body>
 </html>
 <?php
-$conn->close();
+if (isset($conn) && $conn instanceof mysqli) {
+    $conn->close();
+}
 ?>

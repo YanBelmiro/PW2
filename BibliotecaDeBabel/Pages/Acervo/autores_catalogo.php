@@ -34,49 +34,66 @@ $resultado = mysqli_query($conn, $sql);
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Autores - Biblioteca de Babel</title>
-    <link rel="stylesheet" href="../../Styles/default.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Autores - Biblioteca de Babel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Montserrat:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../Styles/default.css" />
 </head>
 <body>
-    <main>
-        <h1>Catálogo de autores</h1>
 
-        <nav>
-            <a href="livros_catalogo.php">Livros</a> |
-            <a href="autores_catalogo.php">Autores</a> |
-            <a href="../Emprestimos/emprestimos.php">Empréstimos</a> |
-            <a href="../Emprestimos/multas.php">Multas</a>
-            <?php if ($_SESSION["tipo_usuario"] === "admin"): ?>
-                | <a href="livros_gerencia.php">Gerenciar acervo</a>
-            <?php endif; ?>
-            | <a href="../Users/users_login.php?sair=1">Sair</a>
-        </nav>
+  <!-- HEADER -->
+  <header>
+    <div class="brand">
+      <img src="../../Images/Logo/TorreDeBabel.svg" class="logo" alt="Logo Biblioteca de Babel">
+      <p class="brand-title">BIBLIOTECA DE BABEL</p>
+    </div>
+    <nav aria-label="Navegação">
+      <a href="livros_catalogo.php">Livros</a>
+      <a href="autores_catalogo.php">Autores</a>
+      <a href="../Emprestimos/emprestimos.php">Empréstimos</a>
+      <a href="../Emprestimos/multas.php">Multas</a>
+      <?php if ($_SESSION["tipo_usuario"] === "admin"): ?>
+        <a href="livros_gerencia.php">Gerenciar Acervo</a>
+      <?php endif; ?>
+      <a href="../Users/users_login.php?sair=1">Sair</a>
+    </nav>
+  </header>
 
-        <?php if ($resultado && mysqli_num_rows($resultado) > 0): ?>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Autor</th>
-                        <th>Nacionalidade</th>
-                        <th>Livros tradicionais cadastrados</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php while ($autor = mysqli_fetch_assoc($resultado)): ?>
-                        <tr>
-                            <td><?php echo htmlspecialchars($autor["nome_autor"], ENT_QUOTES, 'UTF-8'); ?></td>
-                            <td><?php echo htmlspecialchars($autor["nacionalidade"] ?? "Não informada", ENT_QUOTES, 'UTF-8'); ?></td>
-                            <td><?php echo (int)$autor["total_livros"]; ?></td>
-                        </tr>
-                    <?php endwhile; ?>
-                </tbody>
-            </table>
-        <?php else: ?>
-            <p>Nenhum autor cadastrado.</p>
-        <?php endif; ?>
-    </main>
+  <!-- CONTENT -->
+  <main class="content">
+
+    <section id="tabelas-semanticos" class="test-block">
+      <h2>Catálogo de Autores</h2>
+      <p>Relação de autores cadastrados no sistema e seus respectivos livros tradicionais associados[cite: 4].</p>
+
+      <?php if ($resultado && mysqli_num_rows($resultado) > 0): ?>
+        <table>
+          <thead>
+            <tr>
+              <th>Autor</th>
+              <th>Nacionalidade</th>
+              <th>Livros Tradicionais Cadastrados</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php while ($autor = mysqli_fetch_assoc($resultado)): ?>
+              <tr>
+                <td><?php echo htmlspecialchars($autor["nome_autor"], ENT_QUOTES, 'UTF-8'); ?></td>
+                <td><?php echo htmlspecialchars($autor["nacionalidade"] ?? "Não informada", ENT_QUOTES, 'UTF-8'); ?></td>
+                <td><?php echo (int)$autor["total_livros"]; ?></td>
+              </tr>
+            <?php endwhile; ?>
+          </tbody>
+        </table>
+      <?php else: ?>
+        <p>Nenhum autor cadastrado.</p>
+      <?php endif; ?>
+    </section>
+
+  </main>
 </body>
 </html>
 <?php

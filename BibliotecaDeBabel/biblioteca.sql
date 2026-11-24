@@ -68,3 +68,11 @@ CREATE TABLE IF NOT EXISTS tbl_multa (
     FOREIGN KEY (id_emprestimo) REFERENCES tbl_emprestimo(id_emprestimo)
     ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB;
+
+-- =========================================
+-- OS UTILITÁRIOS
+-- =========================================
+
+UPDATE tbl_usuario 
+SET tipo_usuario = 'admin' 
+WHERE email = 'admin@biblioteca.com';

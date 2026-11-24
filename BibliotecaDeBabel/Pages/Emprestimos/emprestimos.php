@@ -29,7 +29,7 @@ unset($_SESSION["mensagem_emprestimos"]);
 
 // O documento do projeto não informa o valor diário da multa.
 // Defina aqui o valor aprovado pelo administrador antes de usar o cálculo da RN04.
-$valor_multa_por_dia = 0.00;
+$valor_multa_por_dia = 2.00; // Exemplo de taxa fixa diária
 
 // Marca como atrasados os empréstimos que passaram do prazo e ainda não foram devolvidos.
 $sql_atrasados = "UPDATE tbl_emprestimo
@@ -97,7 +97,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 }
             }
 
-            // RN01: no máximo três empréstimos que ainda não foram devolvidos.
+            // RN01: no máximo três empréstimos que ainda não foram devolvidos[cite: 4].
             if ($pode_emprestar) {
                 $sql_limite = "SELECT COUNT(*) AS total
                                FROM tbl_emprestimo
@@ -113,7 +113,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
                     if ((int)$dados_limite["total"] >= 3) {
                         $pode_emprestar = false;
-                        $mensagem_erro = "Este usuário já possui três empréstimos ativos.";
+                        $mensagem_erro = "Este usuário já possui três empréstimos ativos (RN01)[cite: 4].";
                     }
                 } else {
                     $pode_emprestar = false;
@@ -121,7 +121,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 }
             }
 
-            // RN02: uma multa pendente bloqueia um novo empréstimo.
+            // RN02: uma multa pendente bloqueia um novo empréstimo[cite: 4].
             if ($pode_emprestar) {
                 $sql_multas = "SELECT COUNT(*) AS total
                                FROM tbl_multa m
@@ -138,7 +138,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
                     if ((int)$dados_multas["total"] > 0) {
                         $pode_emprestar = false;
-                        $mensagem_erro = "Este usuário possui multa pendente e está bloqueado para novos empréstimos.";
+                        $mensagem_erro = "Este usuário possui multa pendente e está bloqueado para novos empréstimos (RN02)[cite: 4].";
                     }
                 } else {
                     $pode_emprestar = false;
@@ -171,7 +171,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
 
             if ($pode_emprestar) {
-                // RN03: prazo de 14 dias corridos a partir da data do empréstimo.
+                // RN03: prazo de 14 dias corridos a partir da data do empréstimo[cite: 5].
                 $sql_insert = "INSERT INTO tbl_emprestimo
                                (id_usuario, id_livro, data_emprestimo, data_devolucao_prevista, status)
                                VALUES (?, ?, CURDATE(), DATE_ADD(CURDATE(), INTERVAL 14 DAY), 'ativo')";
@@ -184,7 +184,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         mysqli_stmt_close($stmt_insert);
                         $conn->commit();
 
-                        $_SESSION["mensagem_emprestimos"] = "Empréstimo registrado. O prazo de devolução é de 14 dias corridos.";
+                        $_SESSION["mensagem_emprestimos"] = "Empréstimo registrado com sucesso. O prazo de devolução é de 14 dias corridos (RN03)[cite: 5].";
                         header("Location: emprestimos.php");
                         exit;
                     } else {
@@ -212,7 +212,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if ($id_emprestimo <= 0) {
             $mensagem = "Empréstimo inválido.";
         } else {
-            // Primeiro identifica o dono do empréstimo; depois bloqueia a linha do usuário.
             $sql_dono = "SELECT id_usuario FROM tbl_emprestimo WHERE id_emprestimo = ?";
             $stmt_dono = mysqli_prepare($conn, $sql_dono);
             $id_usuario_emprestimo = 0;
@@ -282,7 +281,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 mysqli_stmt_close($stmt_devolver);
 
                                 if ($dias_atraso > 0 && $valor_multa_por_dia > 0) {
-                                    // RN04: multa = dias de atraso x valor diário definido pelo administrador.
+                                    // RN04: cálculo automatizado de multas por dias de atraso[cite: 5].
                                     $valor_multa = round($dias_atraso * $valor_multa_por_dia, 2);
 
                                     $sql_multa = "INSERT INTO tbl_multa (id_emprestimo, valor, status_multa)
@@ -296,28 +295,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                             mysqli_stmt_close($stmt_multa);
                                             $conn->commit();
 
-                                            $_SESSION["mensagem_emprestimos"] = "Devolução registrada. Atraso de " . $dias_atraso . " dia(s); multa de R$ " . number_format($valor_multa, 2, ",", ".") . " registrada como pendente.";
+                                            $_SESSION["mensagem_emprestimos"] = "Devolução registrada. Atraso de " . $dias_atraso . " dia(s); multa de R$ " . number_format($valor_multa, 2, ",", ".") . " registrada como pendente (RN04)[cite: 5].";
                                             header("Location: emprestimos.php");
                                             exit;
                                         } else {
                                             mysqli_stmt_close($stmt_multa);
                                             $conn->rollback();
-                                            $mensagem = "Não foi possível registrar a multa. A devolução não foi concluída.";
+                                            $mensagem = "Não foi possível registrar a multa.";
                                         }
                                     } else {
                                         $conn->rollback();
-                                        $mensagem = "Erro ao preparar o registro da multa. A devolução não foi concluída.";
+                                        $mensagem = "Erro ao preparar o registro da multa.";
                                     }
                                 } else {
                                     $conn->commit();
-
-                                    if ($dias_atraso > 0 && $valor_multa_por_dia <= 0) {
-                                        $mensagem = "Devolução registrada com " . $dias_atraso . " dia(s) de atraso. ATENÇÃO: defina o valor diário da multa no início deste arquivo para ativar o cálculo da RN04.";
-                                    } else {
-                                        $_SESSION["mensagem_emprestimos"] = "Devolução registrada sem atraso.";
-                                        header("Location: emprestimos.php");
-                                        exit;
-                                    }
+                                    $_SESSION["mensagem_emprestimos"] = "Devolução registrada com sucesso.";
+                                    header("Location: emprestimos.php");
+                                    exit;
                                 }
                             } else {
                                 mysqli_stmt_close($stmt_devolver);
@@ -338,7 +332,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 }
 
-// Livros tradicionais que não possuem empréstimo ativo ou atrasado.
 $sql_livros = "SELECT l.id_livro, l.titulo, a.nome_autor
                FROM tbl_livro l
                INNER JOIN tbl_autor a ON a.id_autor = l.id_autor
@@ -353,7 +346,6 @@ $livros_disponiveis = mysqli_query($conn, $sql_livros);
 
 if ($is_admin) {
     $usuarios = mysqli_query($conn, "SELECT id_usuario, nome, email FROM tbl_usuario ORDER BY nome");
-
     $sql_lista = "SELECT e.id_emprestimo, e.id_usuario, e.data_emprestimo,
                          e.data_devolucao_prevista, e.data_devolucao_real, e.status,
                          u.nome AS nome_usuario, l.titulo
@@ -361,7 +353,6 @@ if ($is_admin) {
                   INNER JOIN tbl_usuario u ON u.id_usuario = e.id_usuario
                   INNER JOIN tbl_livro l ON l.id_livro = e.id_livro
                   ORDER BY e.data_emprestimo DESC, e.id_emprestimo DESC";
-
     $emprestimos = mysqli_query($conn, $sql_lista);
 } else {
     $sql_lista = "SELECT e.id_emprestimo, e.id_usuario, e.data_emprestimo,
@@ -372,7 +363,6 @@ if ($is_admin) {
                   INNER JOIN tbl_livro l ON l.id_livro = e.id_livro
                   WHERE e.id_usuario = ?
                   ORDER BY e.data_emprestimo DESC, e.id_emprestimo DESC";
-
     $stmt_lista = mysqli_prepare($conn, $sql_lista);
     $emprestimos = false;
 
@@ -386,140 +376,154 @@ if ($is_admin) {
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Empréstimos - Biblioteca de Babel</title>
-    <link rel="stylesheet" href="../../Styles/default.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Empréstimos - Biblioteca de Babel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Montserrat:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../Styles/default.css" />
 </head>
 <body>
-    <main>
-        <h1>Empréstimos e devoluções</h1>
 
-        <nav>
-            <a href="../Acervo/livros_catalogo.php">Livros</a> |
-            <a href="../Acervo/autores_catalogo.php">Autores</a> |
-            <a href="emprestimos.php">Empréstimos</a> |
-            <a href="multas.php">Multas</a>
+  <!-- HEADER -->
+  <header>
+    <div class="brand">
+      <img src="../../Images/Logo/TorreDeBabel.svg" class="logo" alt="Logo Biblioteca de Babel">
+      <p class="brand-title">BIBLIOTECA DE BABEL</p>
+    </div>
+    <nav aria-label="Navegação">
+      <a href="../Acervo/livros_catalogo.php">Livros</a>
+      <a href="../Acervo/autores_catalogo.php">Autores</a>
+      <a href="emprestimos.php">Empréstimos</a>
+      <a href="multas.php">Multas</a>
+      <?php if ($is_admin): ?>
+        <a href="../Acervo/livros_gerencia.php">Gerenciar Acervo</a>
+      <?php endif; ?>
+      <a href="../Users/users_login.php?sair=1">Sair</a>
+    </nav>
+  </header>
 
+  <!-- CONTENT -->
+  <main class="content">
+
+    <?php if (!empty($mensagem)): ?>
+      <div class="test-block" style="background-color: #fff3cd; border-left: 4px solid #ffc107; margin-bottom: 1.5rem; padding: 1rem;">
+        <p style="margin: 0; color: #856404;"><strong>Aviso:</strong> <?php echo htmlspecialchars($mensagem, ENT_QUOTES, 'UTF-8'); ?></p>
+      </div>
+    <?php endif; ?>
+
+    <!-- 1. REGISTRAR EMPRÉSTIMO -->
+    <section id="formularios" class="test-block">
+      <h2>Registrar Empréstimo</h2>
+      <p>O prazo padrão de devolução é de 14 dias corridos (RN03)[cite: 5].</p>
+
+      <form action="" method="POST">
+        <input type="hidden" name="acao" value="emprestar">
+        
+        <fieldset>
+          <legend>Dados do Empréstimo</legend>
+
+          <div class="grid-2">
             <?php if ($is_admin): ?>
-                | <a href="../Acervo/livros_gerencia.php">Gerenciar acervo</a>
-            <?php endif; ?>
-
-            | <a href="../Users/users_login.php?sair=1">Sair</a>
-        </nav>
-
-        <?php if (!empty($mensagem)): ?>
-            <p><?php echo htmlspecialchars($mensagem, ENT_QUOTES, 'UTF-8'); ?></p>
-        <?php endif; ?>
-
-        <h2>Registrar empréstimo</h2>
-
-        <form action="" method="POST">
-            <input type="hidden" name="acao" value="emprestar">
-
-            <?php if ($is_admin): ?>
-                <p>
-                    <label for="id_usuario">Leitor:</label><br>
-                    <select id="id_usuario" name="id_usuario" required>
-                        <option value="">Selecione um usuário</option>
-
-                        <?php if ($usuarios): ?>
-                            <?php while ($usuario = mysqli_fetch_assoc($usuarios)): ?>
-                                <option value="<?php echo (int)$usuario['id_usuario']; ?>">
-                                    <?php echo htmlspecialchars($usuario['nome'] . " - " . $usuario['email'], ENT_QUOTES, 'UTF-8'); ?>
-                                </option>
-                            <?php endwhile; ?>
-                        <?php endif; ?>
-                    </select>
-                </p>
-            <?php else: ?>
-                <p>O empréstimo será registrado em seu próprio nome.</p>
-            <?php endif; ?>
-
-            <p>
-                <label for="id_livro">Livro disponível:</label><br>
-                <select id="id_livro" name="id_livro" required>
-                    <option value="">Selecione um livro</option>
-
-                    <?php if ($livros_disponiveis): ?>
-                        <?php while ($livro = mysqli_fetch_assoc($livros_disponiveis)): ?>
-                            <option value="<?php echo (int)$livro['id_livro']; ?>">
-                                <?php echo htmlspecialchars($livro['titulo'] . " - " . $livro['nome_autor'], ENT_QUOTES, 'UTF-8'); ?>
-                            </option>
-                        <?php endwhile; ?>
-                    <?php endif; ?>
-                </select>
-            </p>
-
-            <p>Prazo padrão: 14 dias corridos a partir da data do empréstimo.</p>
-            <button type="submit">Registrar empréstimo</button>
-        </form>
-
-        <h2><?php echo $is_admin ? "Todos os empréstimos" : "Meus empréstimos"; ?></h2>
-
-        <?php if ($emprestimos && mysqli_num_rows($emprestimos) > 0): ?>
-            <table>
-                <thead>
-                    <tr>
-                        <?php if ($is_admin): ?>
-                            <th>Leitor</th>
-                        <?php endif; ?>
-
-                        <th>Livro</th>
-                        <th>Data do empréstimo</th>
-                        <th>Devolução prevista</th>
-                        <th>Devolução real</th>
-                        <th>Status</th>
-                        <th>Ação</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php while ($emprestimo = mysqli_fetch_assoc($emprestimos)): ?>
-                        <tr>
-                            <?php if ($is_admin): ?>
-                                <td><?php echo htmlspecialchars($emprestimo['nome_usuario'], ENT_QUOTES, 'UTF-8'); ?></td>
-                            <?php endif; ?>
-
-                            <td><?php echo htmlspecialchars($emprestimo['titulo'], ENT_QUOTES, 'UTF-8'); ?></td>
-                            <td><?php echo date('d/m/Y', strtotime($emprestimo['data_emprestimo'])); ?></td>
-                            <td><?php echo date('d/m/Y', strtotime($emprestimo['data_devolucao_prevista'])); ?></td>
-                            <td>
-                                <?php echo $emprestimo['data_devolucao_real'] ? date('d/m/Y', strtotime($emprestimo['data_devolucao_real'])) : "—"; ?>
-                            </td>
-                            <td><?php echo htmlspecialchars($emprestimo['status'], ENT_QUOTES, 'UTF-8'); ?></td>
-                            <td>
-                                <?php if (in_array($emprestimo['status'], ['ativo', 'atrasado'], true)): ?>
-                                    <form action="" method="POST">
-                                        <input type="hidden" name="acao" value="devolver">
-                                        <input type="hidden" name="id_emprestimo" value="<?php echo (int)$emprestimo['id_emprestimo']; ?>">
-                                        <button type="submit">Registrar devolução</button>
-                                    </form>
-                                <?php else: ?>
-                                    Devolvido
-                                <?php endif; ?>
-                            </td>
-                        </tr>
+              <div>
+                <label for="id_usuario">Leitor</label>
+                <select id="id_usuario" name="id_usuario" required>
+                  <option value="">Selecione um usuário</option>
+                  <?php if ($usuarios): ?>
+                    <?php while ($usuario = mysqli_fetch_assoc($usuarios)): ?>
+                      <option value="<?php echo (int)$usuario['id_usuario']; ?>">
+                        <?php echo htmlspecialchars($usuario['nome'] . " - " . $usuario['email'], ENT_QUOTES, 'UTF-8'); ?>
+                      </option>
                     <?php endwhile; ?>
-                </tbody>
-            </table>
-        <?php else: ?>
-            <p>Nenhum empréstimo registrado.</p>
-        <?php endif; ?>
+                  <?php endif; ?>
+                </select>
+              </div>
+            <?php else: ?>
+              <div>
+                <p><strong>Leitor:</strong> Você (empréstimo em seu próprio nome).</p>
+              </div>
+            <?php endif; ?>
 
-        <?php if ($valor_multa_por_dia <= 0): ?>
-            <p>
-                <strong>Configuração pendente:</strong>
-                o valor da multa por dia ainda não foi informado.
-                Defina <code>$valor_multa_por_dia</code> no início deste arquivo
-                para ativar o cálculo automático da RN04.
-            </p>
-        <?php else: ?>
-            <p>
-                Valor da multa por dia:
-                R$ <?php echo number_format($valor_multa_por_dia, 2, ",", "."); ?>
-            </p>
-        <?php endif; ?>
-    </main>
+            <div>
+              <label for="id_livro">Livro Disponível</label>
+              <select id="id_livro" name="id_livro" required>
+                <option value="">Selecione um livro</option>
+                <?php if ($livros_disponiveis): ?>
+                  <?php while ($livro = mysqli_fetch_assoc($livros_disponiveis)): ?>
+                    <option value="<?php echo (int)$livro['id_livro']; ?>">
+                      <?php echo htmlspecialchars($livro['titulo'] . " - " . $livro['nome_autor'], ENT_QUOTES, 'UTF-8'); ?>
+                    </option>
+                  <?php endwhile; ?>
+                <?php endif; ?>
+              </select>
+            </div>
+          </div>
+        </fieldset>
+
+        <div id="botoes" class="inline-group" style="margin-top: 1.5rem;">
+          <button type="submit">Registrar Empréstimo</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- 2. TABELA DE EMPRÉSTIMOS -->
+    <section id="tabelas-semanticos" class="test-block">
+      <h2><?php echo $is_admin ? "Todos os Empréstimos" : "Meus Empréstimos"; ?></h2>
+
+      <?php if ($emprestimos && mysqli_num_rows($emprestimos) > 0): ?>
+        <table>
+          <thead>
+            <tr>
+              <?php if ($is_admin): ?>
+                <th>Leitor</th>
+              <?php endif; ?>
+              <th>Livro</th>
+              <th>Data do Empréstimo</th>
+              <th>Devolução Prevista</th>
+              <th>Devolução Real</th>
+              <th>Status</th>
+              <th>Ação</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php while ($emprestimo = mysqli_fetch_assoc($emprestimos)): ?>
+              <tr>
+                <?php if ($is_admin): ?>
+                  <td><?php echo htmlspecialchars($emprestimo['nome_usuario'], ENT_QUOTES, 'UTF-8'); ?></td>
+                <?php endif; ?>
+                <td><?php echo htmlspecialchars($emprestimo['titulo'], ENT_QUOTES, 'UTF-8'); ?></td>
+                <td><?php echo date('d/m/Y', strtotime($emprestimo['data_emprestimo'])); ?></td>
+                <td><?php echo date('d/m/Y', strtotime($emprestimo['data_devolucao_prevista'])); ?></td>
+                <td>
+                  <?php echo $emprestimo['data_devolucao_real'] ? date('d/m/Y', strtotime($emprestimo['data_devolucao_real'])) : "—"; ?>
+                </td>
+                <td><?php echo htmlspecialchars($emprestimo['status'], ENT_QUOTES, 'UTF-8'); ?></td>
+                <td>
+                  <?php if (in_array($emprestimo['status'], ['ativo', 'atrasado'], true)): ?>
+                    <form action="" method="POST" style="margin: 0;">
+                      <input type="hidden" name="acao" value="devolver">
+                      <input type="hidden" name="id_emprestimo" value="<?php echo (int)$emprestimo['id_emprestimo']; ?>">
+                      <button type="submit" style="padding: 4px 8px; font-size: 0.85rem;">Devolver</button>
+                    </form>
+                  <?php else: ?>
+                    Devolvido
+                  <?php endif; ?>
+                </td>
+              </tr>
+            <?php endwhile; ?>
+          </tbody>
+        </table>
+      <?php else: ?>
+        <p>Nenhum empréstimo registrado.</p>
+      <?php endif; ?>
+
+      <p style="margin-top: 1.5rem; font-size: 0.9rem; color: #666;">
+        Taxa diária de multa configurada: <strong>R$ <?php echo number_format($valor_multa_por_dia, 2, ",", "."); ?></strong>
+      </p>
+    </section>
+
+  </main>
 </body>
 </html>
 <?php

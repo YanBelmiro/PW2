@@ -93,7 +93,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && $is_admin) {
                                 mysqli_stmt_close($stmt_update);
                                 $conn->commit();
 
-                                $_SESSION["mensagem_multas"] = "Pagamento da multa registrado. O usuário está liberado para novos empréstimos, caso não possua outras multas pendentes.";
+                                $_SESSION["mensagem_multas"] = "Pagamento da multa registrado com sucesso. O usuário está liberado para novos empréstimos, caso não possua outras multas pendentes (RN02)[cite: 4, 5].";
                                 header("Location: multas.php");
                                 exit;
                             } else {
@@ -143,89 +143,104 @@ if ($is_admin) {
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multas - Biblioteca de Babel</title>
-    <link rel="stylesheet" href="../../Styles/default.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Multas - Biblioteca de Babel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Montserrat:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../Styles/default.css" />
 </head>
 <body>
-    <main>
-        <h1>Multas</h1>
 
-        <nav>
-            <a href="../Acervo/livros_catalogo.php">Livros</a> |
-            <a href="../Acervo/autores_catalogo.php">Autores</a> |
-            <a href="emprestimos.php">Empréstimos</a> |
-            <a href="multas.php">Multas</a>
+  <!-- HEADER -->
+  <header>
+    <div class="brand">
+      <img src="../../Images/Logo/TorreDeBabel.svg" class="logo" alt="Logo Biblioteca de Babel">
+      <p class="brand-title">BIBLIOTECA DE BABEL</p>
+    </div>
+    <nav aria-label="Navegação">
+      <a href="../Acervo/livros_catalogo.php">Livros</a>
+      <a href="../Acervo/autores_catalogo.php">Autores</a>
+      <a href="emprestimos.php">Empréstimos</a>
+      <a href="multas.php">Multas</a>
+      <?php if ($is_admin): ?>
+        <a href="../Acervo/livros_gerencia.php">Gerenciar Acervo</a>
+      <?php endif; ?>
+      <a href="../Users/users_login.php?sair=1">Sair</a>
+    </nav>
+  </header>
 
-            <?php if ($is_admin): ?>
-                | <a href="../Acervo/livros_gerencia.php">Gerenciar acervo</a>
-            <?php endif; ?>
+  <!-- CONTENT -->
+  <main class="content">
 
-            | <a href="../Users/users_login.php?sair=1">Sair</a>
-        </nav>
+    <?php if (!empty($mensagem)): ?>
+      <div class="test-block" style="background-color: #fff3cd; border-left: 4px solid #ffc107; margin-bottom: 1.5rem; padding: 1rem;">
+        <p style="margin: 0; color: #856404;"><strong>Aviso:</strong> <?php echo htmlspecialchars($mensagem, ENT_QUOTES, 'UTF-8'); ?></p>
+      </div>
+    <?php endif; ?>
 
-        <?php if (!empty($mensagem)): ?>
-            <p><?php echo htmlspecialchars($mensagem, ENT_QUOTES, 'UTF-8'); ?></p>
-        <?php endif; ?>
+    <!-- TABELA DE MULTAS -->
+    <section id="tabelas-semanticos" class="test-block">
+      <h2>Controle de Multas e Penalidades</h2>
+      <p>Gerenciamento financeiro de penalidades por atraso na devolução de obras (RN04). Multas pendentes bloqueiam novos empréstimos (RN02)[cite: 4, 5].</p>
 
-        <?php if ($multas && mysqli_num_rows($multas) > 0): ?>
-            <table>
-                <thead>
-                    <tr>
-                        <?php if ($is_admin): ?>
-                            <th>Leitor</th>
-                        <?php endif; ?>
+      <?php if ($multas && mysqli_num_rows($multas) > 0): ?>
+        <table>
+          <thead>
+            <tr>
+              <?php if ($is_admin): ?>
+                <th>Leitor</th>
+              <?php endif; ?>
+              <th>Livro</th>
+              <th>Empréstimo</th>
+              <th>Devolução Prevista</th>
+              <th>Devolução Real</th>
+              <th>Valor</th>
+              <th>Status</th>
+              <?php if ($is_admin): ?>
+                <th>Ação</th>
+              <?php endif; ?>
+            </tr>
+          </thead>
+          <tbody>
+            <?php while ($multa = mysqli_fetch_assoc($multas)): ?>
+              <tr>
+                <?php if ($is_admin): ?>
+                  <td><?php echo htmlspecialchars($multa['nome_usuario'], ENT_QUOTES, 'UTF-8'); ?></td>
+                <?php endif; ?>
+                <td><?php echo htmlspecialchars($multa['titulo'], ENT_QUOTES, 'UTF-8'); ?></td>
+                <td>#<?php echo (int)$multa['id_emprestimo']; ?></td>
+                <td><?php echo date('d/m/Y', strtotime($multa['data_devolucao_prevista'])); ?></td>
+                <td>
+                  <?php echo $multa['data_devolucao_real'] ? date('d/m/Y', strtotime($multa['data_devolucao_real'])) : "—"; ?>
+                </td>
+                <td>R$ <?php echo number_format((float)$multa['valor'], 2, ",", "."); ?></td>
+                <td><?php echo htmlspecialchars($multa['status_multa'], ENT_QUOTES, 'UTF-8'); ?></td>
 
-                        <th>Livro</th>
-                        <th>Empréstimo</th>
-                        <th>Devolução prevista</th>
-                        <th>Devolução real</th>
-                        <th>Valor</th>
-                        <th>Status</th>
+                <?php if ($is_admin): ?>
+                  <td>
+                    <?php if ($multa['status_multa'] === 'pendente'): ?>
+                      <form action="" method="POST" style="margin: 0;">
+                        <input type="hidden" name="acao" value="registrar_pagamento">
+                        <input type="hidden" name="id_multa" value="<?php echo (int)$multa['id_multa']; ?>">
+                        <button type="submit" style="padding: 4px 8px; font-size: 0.85rem;">Registrar Pagamento</button>
+                      </form>
+                    <?php else: ?>
+                      Paga
+                    <?php endif; ?>
+                  </td>
+                <?php endif; ?>
+              </tr>
+            <?php endwhile; ?>
+          </tbody>
+        </table>
+      <?php else: ?>
+        <p>Nenhuma multa registrada.</p>
+      <?php endif; ?>
+    </section>
 
-                        <?php if ($is_admin): ?>
-                            <th>Ação</th>
-                        <?php endif; ?>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php while ($multa = mysqli_fetch_assoc($multas)): ?>
-                        <tr>
-                            <?php if ($is_admin): ?>
-                                <td><?php echo htmlspecialchars($multa['nome_usuario'], ENT_QUOTES, 'UTF-8'); ?></td>
-                            <?php endif; ?>
-
-                            <td><?php echo htmlspecialchars($multa['titulo'], ENT_QUOTES, 'UTF-8'); ?></td>
-                            <td>#<?php echo (int)$multa['id_emprestimo']; ?></td>
-                            <td><?php echo date('d/m/Y', strtotime($multa['data_devolucao_prevista'])); ?></td>
-                            <td>
-                                <?php echo $multa['data_devolucao_real'] ? date('d/m/Y', strtotime($multa['data_devolucao_real'])) : "—"; ?>
-                            </td>
-                            <td>R$ <?php echo number_format((float)$multa['valor'], 2, ",", "."); ?></td>
-                            <td><?php echo htmlspecialchars($multa['status_multa'], ENT_QUOTES, 'UTF-8'); ?></td>
-
-                            <?php if ($is_admin): ?>
-                                <td>
-                                    <?php if ($multa['status_multa'] === 'pendente'): ?>
-                                        <form action="" method="POST">
-                                            <input type="hidden" name="acao" value="registrar_pagamento">
-                                            <input type="hidden" name="id_multa" value="<?php echo (int)$multa['id_multa']; ?>">
-                                            <button type="submit">Registrar pagamento</button>
-                                        </form>
-                                    <?php else: ?>
-                                        Paga
-                                    <?php endif; ?>
-                                </td>
-                            <?php endif; ?>
-                        </tr>
-                    <?php endwhile; ?>
-                </tbody>
-            </table>
-        <?php else: ?>
-            <p>Nenhuma multa registrada.</p>
-        <?php endif; ?>
-    </main>
+  </main>
 </body>
 </html>
 <?php

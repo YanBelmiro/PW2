@@ -58,69 +58,92 @@ if ($stmt) {
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Catálogo de livros - Biblioteca de Babel</title>
-    <link rel="stylesheet" href="../../Styles/default.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Catálogo de Livros - Biblioteca de Babel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Montserrat:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../Styles/default.css" />
 </head>
 <body>
-    <main>
-        <h1>Catálogo de livros</h1>
-        <p>Olá, <?php echo htmlspecialchars($_SESSION["nome"], ENT_QUOTES, 'UTF-8'); ?>.</p>
 
-        <nav>
-            <a href="livros_catalogo.php">Livros</a> |
-            <a href="autores_catalogo.php">Autores</a> |
-            <a href="../Emprestimos/emprestimos.php">Empréstimos</a> |
-            <a href="../Emprestimos/multas.php">Multas</a>
-            <?php if ($_SESSION["tipo_usuario"] === "admin"): ?>
-                | <a href="livros_gerencia.php">Gerenciar acervo</a>
-            <?php endif; ?>
-            | <a href="../Users/users_login.php?sair=1">Sair</a>
-        </nav>
+  <!-- HEADER -->
+  <header>
+    <div class="brand">
+      <img src="../../Images/Logo/TorreDeBabel.svg" class="logo" alt="Logo Biblioteca de Babel">
+      <p class="brand-title">BIBLIOTECA DE BABEL</p>
+    </div>
+    <nav aria-label="Navegação">
+      <a href="livros_catalogo.php">Livros</a>
+      <a href="autores_catalogo.php">Autores</a>
+      <a href="../Emprestimos/emprestimos.php">Empréstimos</a>
+      <a href="../Emprestimos/multas.php">Multas</a>
+      <?php if ($_SESSION["tipo_usuario"] === "admin"): ?>
+        <a href="livros_gerencia.php">Gerenciar Acervo</a>
+      <?php endif; ?>
+      <a href="../Users/users_login.php?sair=1">Sair</a>
+    </nav>
+  </header>
 
-        <h2>Pesquisar no acervo tradicional</h2>
-        <form action="" method="GET">
-            <label for="busca">Título ou autor:</label><br>
-            <input type="text" id="busca" name="busca"
+  <!-- CONTENT -->
+  <main class="content">
+
+    <section class="test-block">
+      <h2>Catálogo de Acervo Tradicional</h2>
+      <p>Olá, <strong><?php echo htmlspecialchars($_SESSION["nome"], ENT_QUOTES, 'UTF-8'); ?></strong>. Consulte o acervo de livros disponíveis ou faça uma busca por título/autor.</p>
+
+      <form action="" method="GET" style="margin-top: 1.5rem;">
+        <div class="grid-2">
+          <div>
+            <label for="busca">Pesquisar por Título ou Autor</label>
+            <input type="text" id="busca" name="busca" placeholder="Digite o termo..."
                    value="<?php echo htmlspecialchars($busca, ENT_QUOTES, 'UTF-8'); ?>">
+          </div>
+          <div style="display: flex; align-items: flex-end; gap: 10px;">
             <button type="submit">Pesquisar</button>
-            <a href="livros_catalogo.php">Limpar</a>
-        </form>
+            <a href="livros_catalogo.php" style="padding: 10px 15px; background: #6c757d; color: white; text-decoration: none; border-radius: 4px; display: inline-block;">Limpar</a>
+          </div>
+        </div>
+      </form>
+    </section>
 
-        <h2>Livros cadastrados</h2>
+    <section id="tabelas-semanticos" class="test-block">
+      <h2>Livros Cadastrados</h2>
 
-        <?php if ($resultado && mysqli_num_rows($resultado) > 0): ?>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Título</th>
-                        <th>Autor</th>
-                        <th>Ano</th>
-                        <th>Disponibilidade</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php while ($livro = mysqli_fetch_assoc($resultado)): ?>
-                        <tr>
-                            <td><?php echo htmlspecialchars($livro["titulo"], ENT_QUOTES, 'UTF-8'); ?></td>
-                            <td><?php echo htmlspecialchars($livro["nome_autor"], ENT_QUOTES, 'UTF-8'); ?></td>
-                            <td>
-                                <?php
-                                echo $livro["ano_publicacao"] !== null
-                                    ? htmlspecialchars((string)$livro["ano_publicacao"], ENT_QUOTES, 'UTF-8')
-                                    : "Não informado";
-                                ?>
-                            </td>
-                            <td><?php echo htmlspecialchars($livro["disponibilidade"], ENT_QUOTES, 'UTF-8'); ?></td>
-                        </tr>
-                    <?php endwhile; ?>
-                </tbody>
-            </table>
-        <?php else: ?>
-            <p>Nenhum livro tradicional foi encontrado.</p>
-        <?php endif; ?>
-    </main>
+      <?php if ($resultado && mysqli_num_rows($resultado) > 0): ?>
+        <table>
+          <thead>
+            <tr>
+              <th>Título</th>
+              <th>Autor</th>
+              <th>Ano</th>
+              <th>Disponibilidade</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php while ($livro = mysqli_fetch_assoc($resultado)): ?>
+              <tr>
+                <td><?php echo htmlspecialchars($livro["titulo"], ENT_QUOTES, 'UTF-8'); ?></td>
+                <td><?php echo htmlspecialchars($livro["nome_autor"], ENT_QUOTES, 'UTF-8'); ?></td>
+                <td>
+                  <?php
+                  echo $livro["ano_publicacao"] !== null
+                      ? htmlspecialchars((string)$livro["ano_publicacao"], ENT_QUOTES, 'UTF-8')
+                      : "Não informado";
+                  ?>
+                </td>
+                <td><?php echo htmlspecialchars($livro["disponibilidade"], ENT_QUOTES, 'UTF-8'); ?></td>
+              </tr>
+            <?php endwhile; ?>
+          </tbody>
+        </table>
+      <?php else: ?>
+        <p>Nenhum livro tradicional foi encontrado.</p>
+      <?php endif; ?>
+    </section>
+
+  </main>
 </body>
 </html>
 <?php
