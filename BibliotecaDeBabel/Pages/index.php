@@ -173,7 +173,6 @@ if (isset($_GET["sair"])) {
       to { transform: rotate(360deg); }
     }
 
-    /* Mantém a estrutura exata do .content e .test-block do default.css */
     .hero-wrapper {
       position: relative;
       z-index: 1;
@@ -219,7 +218,6 @@ if (isset($_GET["sair"])) {
       </svg>
     </div>
 
-    <!-- Conteúdo usando estritamente as classes nativas do default.css -->
     <main class="hero-wrapper content" style="max-width: 550px;">
       <section class="test-block" style="text-align: center;">
         <h2>Bem-vindo à <br> Biblioteca de Babel</h2>

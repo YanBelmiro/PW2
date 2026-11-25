@@ -1,8 +1,8 @@
 <?php
 // Foto de perfil determinística do autor: mesmo nome + id => mesma imagem e mesmo filtro.
-// Nada é salvo no banco; o resultado é recalculado a cada exibição.
+// Nada é salvo no banco; sem paciência pra isso, logo, o resultado é recalculado a cada exibição.
 
-const AUTOR_AVATAR_TOTAL = 8; // imagens 1.jpg ... 20.jpg em Images/Autores
+const AUTOR_AVATAR_TOTAL = 8; 
 
 const AUTOR_AVATAR_FILTROS = [
     "none",

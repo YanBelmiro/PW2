@@ -1,13 +1,9 @@
 <?php
 // Aviso padronizado: confirmações, validações e erros exibidos no topo das páginas.
-// O visual vem de Styles/default.css (.aviso); não use estilos inline nem cores próprias.
-//
 // $tipo:
 //   "sucesso" => ação concluída        (amarelo)
 //   "erro"    => falha ou bloqueio      (vermelho)
 //   "atencao" => orientação informativa (laranja)
-//
-// $extra_html: conteúdo opcional já escapado (ex.: avatar do autor recém-cadastrado).
 
 function aviso_html(string $mensagem, string $tipo = "atencao", string $extra_html = ""): string
 {
@@ -20,7 +16,6 @@ function aviso_html(string $mensagem, string $tipo = "atencao", string $extra_ht
         $tipo = "atencao";
     }
 
-    // alert interrompe a leitura (erros); status espera a vez (confirmações).
     $papel = $tipo === "erro" ? "alert" : "status";
 
     return '<div class="aviso aviso--' . $tipo . '" role="' . $papel . '">'

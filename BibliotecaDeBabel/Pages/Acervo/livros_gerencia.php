@@ -31,7 +31,7 @@ if ($conn->connect_error) {
 }
 
 $mensagem = $_SESSION["mensagem_acervo"] ?? "";
-$mensagem_tipo = ($mensagem !== "") ? "sucesso" : "erro"; // flash = sucesso; validações diretas = erro
+$mensagem_tipo = ($mensagem !== "") ? "sucesso" : "erro"; 
 unset($_SESSION["mensagem_acervo"]);
 
 $autor_cadastrado = $_SESSION["autor_cadastrado"] ?? null;
@@ -276,7 +276,7 @@ $livros = mysqli_query($conn, $sql_livros);
       </form>
     </section>
 
-    <!-- 3. TABELA DE LIVROS CADASTRADOS -->
+    <!-- 3. LIVROS CADASTRADOS -->
     <section id="tabelas-semanticos" class="test-block">
       <h2>Livros Tradicionais Cadastrados</h2>
 

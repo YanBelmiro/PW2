@@ -38,8 +38,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && $is_admin) {
         if ($id_multa <= 0) {
             $mensagem = "Multa inválida.";
         } else {
-            // Descobre o usuário relacionado à multa para sincronizar a operação
-            // com a verificação de multas feita ao registrar novos empréstimos.
             $sql_dono = "SELECT e.id_usuario
                          FROM tbl_multa m
                          INNER JOIN tbl_emprestimo e ON e.id_emprestimo = m.id_emprestimo

@@ -48,7 +48,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             } else {
                 $senha_hash = password_hash($senha, PASSWORD_DEFAULT);
 
-                // Todo cadastro público começa como leitor.
+                // Todo cadastro público começa como betinha.
                 $sql_insert = "INSERT INTO tbl_usuario (nome, email, senha) VALUES (?, ?, ?)";
                 $stmt_insert = mysqli_prepare($conn, $sql_insert);
 

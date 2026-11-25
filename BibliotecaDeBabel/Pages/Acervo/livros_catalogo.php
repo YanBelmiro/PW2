@@ -26,7 +26,6 @@ if ($conn->connect_error) {
 
 $conn->set_charset("utf8mb4");
 
-// Atualiza o estado dos empréstimos cujo prazo já passou.
 $sql_atrasados = "UPDATE tbl_emprestimo
                   SET status = 'atrasado'
                   WHERE status = 'ativo' AND data_devolucao_prevista < CURDATE()";
@@ -74,176 +73,7 @@ $busca_html = htmlspecialchars($busca, ENT_QUOTES, 'UTF-8');
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Montserrat:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../../Styles/default.css" />
 
-  <style>
-    /* ----- Barra de pesquisa fixa (fica logo abaixo do header ao rolar) ----- */
-    .catalogo-busca {
-      position: sticky;
-      top: var(--altura-header, 5rem);
-      z-index: 90;
-      background: rgba(10, 10, 18, 0.92);
-      backdrop-filter: blur(14px);
-      border-bottom: 1px solid var(--cosmos-border);
-    }
-    .catalogo-busca__interno {
-      max-width: 1240px;
-      margin: 0 auto;
-      padding: 0.9rem 1.5rem;
-    }
-    .catalogo-busca form {
-      flex-direction: row;
-      align-items: center;
-      gap: 0.75rem;
-    }
-    .catalogo-busca input { flex: 1; min-width: 0; }
-    .catalogo-busca .contagem {
-      margin: 0.5rem 0 0;
-      font-size: 0.8rem;
-      color: var(--cosmos-muted);
-    }
-    /* ----- Ficha do livro: 3D à esquerda, dados à direita ----- */
-    main.content.catalogo {
-      max-width: 1240px;
-      padding: 1rem 1.5rem 5rem;
-      gap: 0;
-    }
-    .livro-ficha {
-      display: grid;
-      grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
-      gap: 2rem;
-      align-items: stretch;
-      padding: 2.5rem 0;
-      border-bottom: 1px solid var(--cosmos-border);
-      scroll-margin-top: calc(var(--altura-header, 5rem) + 5rem);
-    }
-    .livro-ficha:last-child { border-bottom: 0; }
 
-    .livro-palco {
-      position: relative;
-      aspect-ratio: 5 / 6;
-      overflow: hidden;
-      background:
-        radial-gradient(circle at 50% 38%, rgba(24, 0, 173, 0.32), transparent 68%),
-        var(--cosmos-surface);
-      border: 1px solid var(--cosmos-border);
-      cursor: grab;
-      transition: border-color var(--transition-smooth);
-    }
-    .livro-ficha.ativo .livro-palco { border-color: rgba(255, 117, 31, 0.55); }
-
-    .livro-capa-2d {
-      position: absolute;
-      inset: 0;
-      margin: auto;
-      height: 80%;
-      width: auto;
-      aspect-ratio: 2 / 3;
-      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6);
-    }
-    .livro-ficha.ativo .livro-capa-2d { visibility: hidden; }
-
-    .livro-3d-canvas {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      max-width: none;
-      touch-action: pan-y; /* rolagem vertical continua funcionando no celular */
-      cursor: grab;
-    }
-    .livro-3d-canvas:active { cursor: grabbing; }
-
-    .livro-controles {
-      position: absolute;
-      left: 0; right: 0; bottom: 0.9rem;
-      z-index: 2;
-      display: none;
-      justify-content: center;
-      gap: 0.5rem;
-    }
-    .livro-ficha.ativo .livro-controles { display: flex; }
-    .sem-webgl .livro-controles { display: none !important; }
-    .livro-controles button { padding: 0.45rem 1rem; font-size: 0.7rem; }
-
-    .livro-dados {
-      display: grid;
-      grid-template-columns: clamp(88px, 11vw, 132px) minmax(0, 1fr);
-      grid-template-rows: minmax(0, 1.1fr) minmax(0, 1.5fr) minmax(0, 0.8fr);
-      gap: 1rem;
-      min-height: 0;
-    }
-    .livro-dados > div {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      padding: 1.25rem 1.5rem;
-      background: rgba(10, 10, 18, 0.45);
-      border: 1px solid var(--cosmos-border);
-      min-width: 0;
-    }
-    .livro-indice { align-items: center; text-align: center; padding: 1rem 0.5rem !important; }
-    .livro-indice strong {
-      font-size: clamp(1.75rem, 3vw, 2.5rem);
-      font-weight: 800;
-      line-height: 1;
-      color: var(--cosmos-yellow);
-    }
-    .livro-indice small { margin-top: 0.35rem; }
-
-    .livro-titulo h2 {
-      margin: 0;
-      font-size: clamp(1.4rem, 2.6vw, 2.25rem);
-      overflow-wrap: anywhere;
-    }
-
-    .livro-autor-foto { padding: 0 !important; overflow: hidden; }
-    .livro-autor-foto img { width: 100%; height: 100%; object-fit: cover; }
-    .livro-autor-nome p {
-      margin: 0;
-      font-size: clamp(1.1rem, 2vw, 1.6rem);
-      font-weight: 700;
-      color: var(--cosmos-white);
-      overflow-wrap: anywhere;
-    }
-
-    .livro-meta {
-      grid-column: 1 / -1;
-      flex-direction: row !important;
-      align-items: center;
-      justify-content: space-between !important;
-      flex-wrap: wrap;
-      gap: 1.5rem;
-    }
-    .livro-meta strong { display: block; font-size: 1.25rem; }
-    .livro-meta small { display: block; }
-
-    .situacao {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.55rem;
-      font-size: 1.1rem;
-      font-weight: 700;
-    }
-    .situacao::before { /* hexágono, como a logo */
-      content: "";
-      width: 0.75rem;
-      height: 0.75rem;
-      background: currentColor;
-      clip-path: polygon(25% 5%, 75% 5%, 100% 50%, 75% 95%, 25% 95%, 0 50%);
-    }
-    .situacao.ok  { color: var(--cosmos-yellow); }
-    .situacao.off { color: var(--cosmos-red); }
-
-    .catalogo-vazio { padding: 3rem 0; }
-
-    @media (max-width: 860px) {
-      .livro-ficha { grid-template-columns: 1fr; gap: 1.25rem; }
-      .livro-palco { aspect-ratio: 4 / 5; width: 100%; max-width: 480px; margin-inline: auto; }
-      .livro-dados { grid-template-rows: auto; }
-      .catalogo-busca form { flex-wrap: wrap; }
-    }
-  </style>
-
-  <!-- three.js (mesma versão e origem usadas no projeto Ex Nihilo) -->
   <script type="importmap">
     {
       "imports": {
@@ -258,7 +88,7 @@ $busca_html = htmlspecialchars($busca, ENT_QUOTES, 'UTF-8');
   <!-- HEADER -->
   <?php include "../../Includes/header.php"; ?>
 
-  <!-- PESQUISA (fixa) -->
+  <!-- PESQUISA -->
   <div class="catalogo-busca">
     <div class="catalogo-busca__interno">
       <form action="" method="GET" role="search">
@@ -349,8 +179,6 @@ $busca_html = htmlspecialchars($busca, ENT_QUOTES, 'UTF-8');
   </main>
 
   <script>
-    // O header é sticky e pode quebrar em duas linhas: a barra de pesquisa
-    // se encaixa logo abaixo dele, qualquer que seja a altura.
     (function () {
       var header = document.querySelector("header");
       if (!header) return;
