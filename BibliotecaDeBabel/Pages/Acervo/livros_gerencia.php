@@ -5,6 +5,8 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+require_once "../../Includes/autor_avatar.php";
+
 if (!isset($_SESSION["id_usuario"])) {
     header("Location: ../index.php");
     exit;
@@ -27,9 +29,11 @@ if ($conn->connect_error) {
     die("Erro ao conectar ao banco de dados: " . htmlspecialchars($conn->connect_error, ENT_QUOTES, 'UTF-8'));
 }
 
-$conn->set_charset("utf8mb4");
 $mensagem = $_SESSION["mensagem_acervo"] ?? "";
 unset($_SESSION["mensagem_acervo"]);
+
+$autor_cadastrado = $_SESSION["autor_cadastrado"] ?? null;
+unset($_SESSION["autor_cadastrado"]);
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $acao = $_POST["acao"] ?? "";
@@ -50,6 +54,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
                 if (mysqli_stmt_execute($stmt)) {
                     $_SESSION["mensagem_acervo"] = "Autor cadastrado com sucesso.";
+                    $_SESSION["autor_cadastrado"] = [
+                        "id"   => mysqli_stmt_insert_id($stmt),
+                        "nome" => $nome_autor,
+                    ];
                     mysqli_stmt_close($stmt);
                     header("Location: livros_gerencia.php");
                     exit;
@@ -157,7 +165,7 @@ if ($id_editar > 0) {
     }
 }
 
-$sql_livros = "SELECT l.id_livro, l.titulo, l.ano_publicacao, a.nome_autor
+$sql_livros = "SELECT l.id_livro, l.titulo, l.ano_publicacao, l.id_autor, a.nome_autor
                FROM tbl_livro l
                INNER JOIN tbl_autor a ON a.id_autor = l.id_autor
                WHERE l.gerado_aleatoriamente = 0
@@ -186,6 +194,9 @@ $livros = mysqli_query($conn, $sql_livros);
     <?php if (!empty($mensagem)): ?>
       <div class="test-block" style="background-color: #e6ffec; border-left: 4px solid #28a745; margin-bottom: 1.5rem; padding: 1rem;">
         <p style="margin: 0; color: #155724;"><strong>Aviso:</strong> <?php echo htmlspecialchars($mensagem, ENT_QUOTES, 'UTF-8'); ?></p>
+        <?php if ($autor_cadastrado): ?>
+          <?php echo autor_avatar_html((int)$autor_cadastrado["id"], $autor_cadastrado["nome"], 120); ?>
+        <?php endif; ?>
       </div>
     <?php endif; ?>
 
@@ -281,7 +292,10 @@ $livros = mysqli_query($conn, $sql_livros);
             <?php while ($livro = mysqli_fetch_assoc($livros)): ?>
               <tr>
                 <td><?php echo htmlspecialchars($livro['titulo'], ENT_QUOTES, 'UTF-8'); ?></td>
-                <td><?php echo htmlspecialchars($livro['nome_autor'], ENT_QUOTES, 'UTF-8'); ?></td>
+                <td>
+                  <?php echo autor_avatar_html((int)$livro['id_autor'], $livro['nome_autor'], 32); ?>
+                  <?php echo htmlspecialchars($livro['nome_autor'], ENT_QUOTES, 'UTF-8'); ?>
+                </td>
                 <td>
                   <?php
                   echo $livro['ano_publicacao'] !== null
@@ -290,7 +304,7 @@ $livros = mysqli_query($conn, $sql_livros);
                   ?>
                 </td>
                 <td>
-                  <a href="livros_gerencia.php?editar=<?php echo (int)$livro['id_livro']; ?>" style="padding: 4px 8px; background: #007bff; color: white; text-decoration: none; border-radius: 4px; font-size: 0.85rem;">Editar</a>
+                  <a href="livros_gerencia.php?editar=<?php echo (int)$livro['id_livro']; ?>"><button type="button" class="secondary" style="border: 1px solid var(--cosmos-border);">Editar</button></a>
                 </td>
               </tr>
             <?php endwhile; ?>

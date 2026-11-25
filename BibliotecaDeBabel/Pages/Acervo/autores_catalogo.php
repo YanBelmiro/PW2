@@ -5,6 +5,8 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+require_once "../../Includes/autor_avatar.php";
+
 if (!isset($_SESSION["id_usuario"])) {
     header("Location: ../index.php");
     exit;
@@ -52,33 +54,38 @@ $resultado = mysqli_query($conn, $sql);
   <!-- CONTENT -->
   <main class="content">
 
-    <section id="tabelas-semanticos" class="test-block">
-      <h2>Catálogo de Autores</h2>
-      <p>Relação de autores cadastrados no sistema e seus respectivos livros tradicionais associados[cite: 4].</p>
+    <section class="test-block">
+  <h2>Catálogo de Autores</h2>
+  <p>Relação de autores cadastrados no sistema e seus respectivos livros tradicionais associados.</p>
 
-      <?php if ($resultado && mysqli_num_rows($resultado) > 0): ?>
-        <table>
-          <thead>
-            <tr>
-              <th>Autor</th>
-              <th>Nacionalidade</th>
-              <th>Livros Tradicionais Cadastrados</th>
-            </tr>
-          </thead>
-          <tbody>
-            <?php while ($autor = mysqli_fetch_assoc($resultado)): ?>
-              <tr>
-                <td><?php echo htmlspecialchars($autor["nome_autor"], ENT_QUOTES, 'UTF-8'); ?></td>
-                <td><?php echo htmlspecialchars($autor["nacionalidade"] ?? "Não informada", ENT_QUOTES, 'UTF-8'); ?></td>
-                <td><?php echo (int)$autor["total_livros"]; ?></td>
-              </tr>
-            <?php endwhile; ?>
-          </tbody>
-        </table>
-      <?php else: ?>
-        <p>Nenhum autor cadastrado.</p>
-      <?php endif; ?>
-    </section>
+  <?php if ($resultado && mysqli_num_rows($resultado) > 0): ?>
+    <div class="grid-2">
+      <?php while ($autor = mysqli_fetch_assoc($resultado)): ?>
+        <?php
+          $total = (int)$autor["total_livros"];
+          $nome  = htmlspecialchars($autor["nome_autor"], ENT_QUOTES, 'UTF-8');
+          $nac   = htmlspecialchars($autor["nacionalidade"] ?? "Não informada", ENT_QUOTES, 'UTF-8');
+        ?>
+        <figure>
+          <?php echo autor_avatar_html((int)$autor["id_autor"], $autor["nome_autor"], 400); ?>
+          <figcaption>
+            <h3><?php echo $nome; ?></h3>
+            <p><?php echo $nac; ?></p>
+            <p>
+              <strong><?php echo $total; ?></strong>
+              <?php echo $total === 1 ? "livro" : "livros"; ?> no acervo
+            </p>
+            <?php if ($total > 0): ?>
+              <a href="livros_catalogo.php?busca=<?php echo urlencode($autor["nome_autor"]); ?>">Ver livros →</a>
+            <?php endif; ?>
+          </figcaption>
+        </figure>
+      <?php endwhile; ?>
+    </div>
+  <?php else: ?>
+    <p>Nenhum autor cadastrado.</p>
+  <?php endif; ?>
+</section>
 
   </main>
 </body>
