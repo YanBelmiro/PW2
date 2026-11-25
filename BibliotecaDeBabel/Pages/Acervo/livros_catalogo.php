@@ -95,28 +95,11 @@ $busca_html = htmlspecialchars($busca, ENT_QUOTES, 'UTF-8');
       gap: 0.75rem;
     }
     .catalogo-busca input { flex: 1; min-width: 0; }
-    .catalogo-busca .limpar {
-      display: inline-flex;
-      align-items: center;
-      padding: 0.8rem 1.2rem;
-      font-size: 0.875rem;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      border: 1px solid var(--cosmos-border);
-      color: var(--cosmos-white);
-    }
-    .catalogo-busca .limpar:hover { border-color: var(--cosmos-orange); }
     .catalogo-busca .contagem {
       margin: 0.5rem 0 0;
       font-size: 0.8rem;
       color: var(--cosmos-muted);
     }
-    .sr-only {
-      position: absolute; width: 1px; height: 1px; overflow: hidden;
-      clip: rect(0 0 0 0); white-space: nowrap;
-    }
-
     /* ----- Ficha do livro: 3D à esquerda, dados à direita ----- */
     main.content.catalogo {
       max-width: 1240px;
@@ -284,7 +267,7 @@ $busca_html = htmlspecialchars($busca, ENT_QUOTES, 'UTF-8');
                value="<?php echo $busca_html; ?>">
         <button type="submit">Pesquisar</button>
         <?php if ($busca !== ""): ?>
-          <a class="limpar" href="livros_catalogo.php">Limpar</a>
+          <a class="btn-link" href="livros_catalogo.php">Limpar</a>
         <?php endif; ?>
       </form>
       <p class="contagem">

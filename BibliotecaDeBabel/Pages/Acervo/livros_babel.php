@@ -1,4 +1,5 @@
 <?php
+require_once "../../Includes/aviso.php";
 date_default_timezone_set("America/Sao_Paulo");
 
 if (session_status() === PHP_SESSION_NONE) {
@@ -333,29 +334,26 @@ $proximoLivro = min(BABEL_CATALOGO_INICIAL, $livroId + 1);
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Biblioteca de Babel</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../../Styles/default.css">
   <style>
     .babel-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(260px,.65fr);gap:1.25rem}
-    .babel-panel{background:rgba(10,12,35,.72);border:1px solid rgba(255,255,255,.13);border-radius:14px;padding:1.25rem;margin-bottom:1.25rem}
+    .babel-panel{background:rgba(10,10,18,.45);border:1px solid var(--cosmos-border);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1.25rem}
     .babel-panel h2,.babel-panel h3{margin-top:0}
     .babel-meta{display:flex;flex-wrap:wrap;gap:.55rem;margin:.8rem 0}
-    .babel-chip{display:inline-block;padding:.35rem .65rem;border:1px solid rgba(255,255,255,.2);border-radius:999px;font: .8rem 'JetBrains Mono',monospace;color:#ffde59}
-    .babel-book{white-space:pre;overflow-x:auto;background:#080a18;border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:1rem;font: .78rem/1.55 'JetBrains Mono',monospace;color:#e9e9f5;max-width:100%}
+    .babel-chip{display:inline-block;padding:.35rem .65rem;border:1px solid var(--cosmos-border);border-radius:var(--radius-sm);font:.8rem var(--font-mono);color:var(--cosmos-yellow)}
+    .babel-book{white-space:pre;overflow-x:auto;background:var(--cosmos-surface);border:1px solid var(--cosmos-border);border-radius:var(--radius-md);padding:1rem;font:.78rem/1.55 var(--font-mono);color:var(--cosmos-white);max-width:100%}
     .babel-form{display:grid;gap:.7rem}
-    .babel-form input,.babel-form select,.babel-form textarea{width:100%;box-sizing:border-box;padding:.75rem;border-radius:8px;border:1px solid #555;background:#10152d;color:#fff;font:inherit}
-    .babel-form textarea{min-height:120px;resize:vertical}
-    .babel-form button,.babel-button{display:inline-block;padding:.7rem 1rem;border:0;border-radius:8px;background:#ff751f;color:#111;font-weight:800;text-decoration:none;cursor:pointer}
     .babel-nav{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1rem}
-    .babel-nav a{padding:.55rem .8rem;border:1px solid rgba(255,255,255,.2);border-radius:8px;color:#fff;text-decoration:none}
+    .babel-nav a{padding:.55rem .8rem;border:1px solid var(--cosmos-border);border-radius:var(--radius-md);color:var(--cosmos-white)}
+    .babel-nav a:hover{border-color:var(--cosmos-orange)}
     .babel-monkey{display:flex;gap:1rem;align-items:center}
-    .babel-avatar{width:76px;height:76px;flex:0 0 76px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#ffde59,#ff751f);font-size:2.5rem;border:2px solid rgba(255,255,255,.4);overflow:hidden}
+    .babel-avatar{width:76px;height:76px;flex:0 0 76px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,var(--cosmos-yellow),var(--cosmos-orange));font-size:2.5rem;border:2px solid var(--cosmos-border);overflow:hidden}
     .babel-avatar img{width:100%;height:100%;object-fit:cover}
-    .babel-result{padding:.8rem 0;border-top:1px solid rgba(255,255,255,.12)}
+    .babel-result{padding:.8rem 0;border-top:1px solid var(--cosmos-border)}
     .babel-result:first-of-type{border-top:0}
-    .babel-notice{padding:.8rem 1rem;border-left:4px solid #ffde59;background:rgba(255,222,89,.09);border-radius:6px;margin-bottom:1rem}
-    .babel-muted{opacity:.75;font-size:.9rem}
+    .babel-muted{color:var(--cosmos-muted);font-size:.9rem}
     @media(max-width:850px){.babel-grid{grid-template-columns:1fr}}
   </style>
 </head>
@@ -371,9 +369,7 @@ $proximoLivro = min(BABEL_CATALOGO_INICIAL, $livroId + 1);
       <span class="babel-chip"><?php echo number_format($totalPaginasIndexadas, 0, ",", "."); ?> páginas indexadas</span>
       <span class="babel-chip">25 símbolos</span>
     </div>
-    <?php if ($mensagem !== ""): ?>
-      <div class="babel-notice"><?php echo babel_h($mensagem); ?></div>
-    <?php endif; ?>
+    <?php echo aviso_html($mensagem, "atencao"); ?>
   </section>
 
   <div class="babel-grid">
@@ -466,7 +462,7 @@ $proximoLivro = min(BABEL_CATALOGO_INICIAL, $livroId + 1);
             Página <?php echo (int)$resultado["pagina"]; ?> ·
             <?php echo babel_h($resultado["nome_autor"]); ?>
           </div>
-          <a class="babel-button" href="?livro_id=<?php echo (int)$resultado["id_livro"]; ?>&pagina=<?php echo (int)$resultado["pagina"]; ?>">Abrir resultado</a>
+          <a class="btn-link" href="?livro_id=<?php echo (int)$resultado["id_livro"]; ?>&pagina=<?php echo (int)$resultado["pagina"]; ?>">Abrir resultado</a>
         </div>
       <?php endforeach; ?>
     <?php endif; ?>

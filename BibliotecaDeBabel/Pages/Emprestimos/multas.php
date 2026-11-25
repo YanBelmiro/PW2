@@ -1,4 +1,5 @@
 <?php
+require_once "../../Includes/aviso.php";
 date_default_timezone_set("America/Sao_Paulo");
 
 if (session_status() === PHP_SESSION_NONE) {
@@ -25,6 +26,7 @@ if ($conn->connect_error) {
 $conn->set_charset("utf8mb4");
 $is_admin = ($_SESSION["tipo_usuario"] === "admin");
 $mensagem = $_SESSION["mensagem_multas"] ?? "";
+$mensagem_tipo = ($mensagem !== "") ? "sucesso" : "erro"; // flash = sucesso; validações diretas = erro
 unset($_SESSION["mensagem_multas"]);
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && $is_admin) {
@@ -95,7 +97,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && $is_admin) {
                                 mysqli_stmt_close($stmt_update);
                                 $conn->commit();
 
-                                $_SESSION["mensagem_multas"] = "Pagamento da multa registrado com sucesso. O usuário está liberado para novos empréstimos, caso não possua outras multas pendentes (RN02)[cite: 4, 5].";
+                                $_SESSION["mensagem_multas"] = "Pagamento da multa registrado com sucesso. O usuário está liberado para novos empréstimos, caso não possua outras multas pendentes.";
                                 header("Location: multas.php");
                                 exit;
                             } else {
@@ -161,16 +163,12 @@ if ($is_admin) {
   <!-- CONTENT -->
   <main class="content">
 
-    <?php if (!empty($mensagem)): ?>
-      <div class="test-block" style="background-color: #fff3cd; border-left: 4px solid #ffc107; margin-bottom: 1.5rem; padding: 1rem;">
-        <p style="margin: 0; color: #856404;"><strong>Aviso:</strong> <?php echo htmlspecialchars($mensagem, ENT_QUOTES, 'UTF-8'); ?></p>
-      </div>
-    <?php endif; ?>
+    <?php echo aviso_html($mensagem, $mensagem_tipo); ?>
 
     <!-- TABELA DE MULTAS -->
     <section id="tabelas-semanticos" class="test-block">
       <h2>Controle de Multas e Penalidades</h2>
-      <p>Gerenciamento financeiro de penalidades por atraso na devolução de obras (RN04). Multas pendentes bloqueiam novos empréstimos (RN02)[cite: 4, 5].</p>
+      <p>Gerenciamento financeiro de penalidades por atraso na devolução de obras. Multas pendentes bloqueiam novos empréstimos.</p>
 
       <?php if ($multas && mysqli_num_rows($multas) > 0): ?>
         <table>
@@ -211,7 +209,7 @@ if ($is_admin) {
                       <form action="" method="POST" style="margin: 0;">
                         <input type="hidden" name="acao" value="registrar_pagamento">
                         <input type="hidden" name="id_multa" value="<?php echo (int)$multa['id_multa']; ?>">
-                        <button type="submit" style="padding: 4px 8px; font-size: 0.85rem;">Registrar Pagamento</button>
+                        <button type="submit" class="btn-sm">Registrar Pagamento</button>
                       </form>
                     <?php else: ?>
                       Paga

@@ -1,4 +1,5 @@
 <?php
+require_once "../../Includes/aviso.php";
 date_default_timezone_set("America/Sao_Paulo");
 
 if (session_status() === PHP_SESSION_NONE) {
@@ -30,6 +31,7 @@ if ($conn->connect_error) {
 }
 
 $mensagem = $_SESSION["mensagem_acervo"] ?? "";
+$mensagem_tipo = ($mensagem !== "") ? "sucesso" : "erro"; // flash = sucesso; validações diretas = erro
 unset($_SESSION["mensagem_acervo"]);
 
 $autor_cadastrado = $_SESSION["autor_cadastrado"] ?? null;
@@ -192,12 +194,12 @@ $livros = mysqli_query($conn, $sql_livros);
   <main class="content">
 
     <?php if (!empty($mensagem)): ?>
-      <div class="test-block" style="background-color: #e6ffec; border-left: 4px solid #28a745; margin-bottom: 1.5rem; padding: 1rem;">
-        <p style="margin: 0; color: #155724;"><strong>Aviso:</strong> <?php echo htmlspecialchars($mensagem, ENT_QUOTES, 'UTF-8'); ?></p>
-        <?php if ($autor_cadastrado): ?>
-          <?php echo autor_avatar_html((int)$autor_cadastrado["id"], $autor_cadastrado["nome"], 120); ?>
-        <?php endif; ?>
-      </div>
+      <?php
+        $avatar_extra = $autor_cadastrado
+            ? autor_avatar_html((int)$autor_cadastrado["id"], $autor_cadastrado["nome"], 120)
+            : "";
+        echo aviso_html($mensagem, $mensagem_tipo, $avatar_extra);
+      ?>
     <?php endif; ?>
 
     <!-- 1. CADASTRAR AUTOR -->
@@ -268,7 +270,7 @@ $livros = mysqli_query($conn, $sql_livros);
         <div id="botoes" class="inline-group" style="margin-top: 1.5rem;">
           <button type="submit"><?php echo $livro_editar ? "Salvar Alterações" : "Cadastrar Livro"; ?></button>
           <?php if ($livro_editar): ?>
-            <a href="livros_gerencia.php" style="padding: 10px 15px; background: #6c757d; color: white; text-decoration: none; border-radius: 4px; display: inline-block;">Cancelar Edição</a>
+            <a href="livros_gerencia.php" class="btn-link">Cancelar Edição</a>
           <?php endif; ?>
         </div>
       </form>

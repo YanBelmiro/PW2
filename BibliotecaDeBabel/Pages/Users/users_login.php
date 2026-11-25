@@ -1,4 +1,5 @@
 <?php
+require_once "../../Includes/aviso.php";
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -97,13 +98,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     <section id="formularios" class="test-block">
       <h2>Entrar no Sistema</h2>
-      <p>Acesse com seu e-mail e senha cadastrados para gerenciar empréstimos e o acervo[cite: 4].</p>
+      <p>Acesse com seu e-mail e senha cadastrados para gerenciar empréstimos e o acervo.</p>
 
-      <?php if (!empty($mensagem)): ?>
-        <div class="test-block" style="background-color: #ffe6e6; border-left: 4px solid #ff4d4d; margin-bottom: 1.5rem; padding: 1rem;">
-          <p style="margin: 0; color: #b30000;"><strong>Aviso:</strong> <?php echo htmlspecialchars($mensagem, ENT_QUOTES, 'UTF-8'); ?></p>
-        </div>
-      <?php endif; ?>
+      <?php echo aviso_html($mensagem, "erro"); ?>
 
       <form action="" method="POST">
         <fieldset>
@@ -135,7 +132,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
   <!-- MODAL DE SUPORTE / AJUDA -->
   <dialog id="test-dialog">
     <h3>Ajuda - Biblioteca de Babel</h3>
-    <p>Se você esqueceu sua senha ou possui problemas de acesso, procure o administrador da biblioteca responsável pela disciplina de Programação Web 2[cite: 2].</p>
+    <p>Se você esqueceu sua senha ou possui problemas de acesso, procure o administrador da biblioteca.</p>
     <div class="inline-group" style="justify-content: flex-end; margin-top: 1.5rem;">
       <button type="button" id="close-modal-btn">Fechar</button>
     </div>

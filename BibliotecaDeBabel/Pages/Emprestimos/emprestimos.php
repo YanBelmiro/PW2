@@ -1,4 +1,5 @@
 <?php
+require_once "../../Includes/aviso.php";
 date_default_timezone_set("America/Sao_Paulo");
 
 if (session_status() === PHP_SESSION_NONE) {
@@ -25,6 +26,7 @@ if ($conn->connect_error) {
 $conn->set_charset("utf8mb4");
 $is_admin = ($_SESSION["tipo_usuario"] === "admin");
 $mensagem = $_SESSION["mensagem_emprestimos"] ?? "";
+$mensagem_tipo = ($mensagem !== "") ? "sucesso" : "erro"; // flash = sucesso; validações diretas = erro
 unset($_SESSION["mensagem_emprestimos"]);
 
 // O documento do projeto não informa o valor diário da multa.
@@ -97,7 +99,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 }
             }
 
-            // RN01: no máximo três empréstimos que ainda não foram devolvidos[cite: 4].
+            // RN01: no máximo três empréstimos que ainda não foram devolvidos.
             if ($pode_emprestar) {
                 $sql_limite = "SELECT COUNT(*) AS total
                                FROM tbl_emprestimo
@@ -113,7 +115,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
                     if ((int)$dados_limite["total"] >= 3) {
                         $pode_emprestar = false;
-                        $mensagem_erro = "Este usuário já possui três empréstimos ativos (RN01)[cite: 4].";
+                        $mensagem_erro = "Este usuário já possui três empréstimos ativos.";
                     }
                 } else {
                     $pode_emprestar = false;
@@ -121,7 +123,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 }
             }
 
-            // RN02: uma multa pendente bloqueia um novo empréstimo[cite: 4].
+            // RN02: uma multa pendente bloqueia um novo empréstimo.
             if ($pode_emprestar) {
                 $sql_multas = "SELECT COUNT(*) AS total
                                FROM tbl_multa m
@@ -138,7 +140,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
                     if ((int)$dados_multas["total"] > 0) {
                         $pode_emprestar = false;
-                        $mensagem_erro = "Este usuário possui multa pendente e está bloqueado para novos empréstimos (RN02)[cite: 4].";
+                        $mensagem_erro = "Este usuário possui multa pendente e está bloqueado para novos empréstimos.";
                     }
                 } else {
                     $pode_emprestar = false;
@@ -171,7 +173,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
 
             if ($pode_emprestar) {
-                // RN03: prazo de 14 dias corridos a partir da data do empréstimo[cite: 5].
+                // RN03: prazo de 14 dias corridos a partir da data do empréstimo.
                 $sql_insert = "INSERT INTO tbl_emprestimo
                                (id_usuario, id_livro, data_emprestimo, data_devolucao_prevista, status)
                                VALUES (?, ?, CURDATE(), DATE_ADD(CURDATE(), INTERVAL 14 DAY), 'ativo')";
@@ -184,7 +186,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         mysqli_stmt_close($stmt_insert);
                         $conn->commit();
 
-                        $_SESSION["mensagem_emprestimos"] = "Empréstimo registrado com sucesso. O prazo de devolução é de 14 dias corridos (RN03)[cite: 5].";
+                        $_SESSION["mensagem_emprestimos"] = "Empréstimo registrado com sucesso. O prazo de devolução é de 14 dias corridos.";
                         header("Location: emprestimos.php");
                         exit;
                     } else {
@@ -281,7 +283,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 mysqli_stmt_close($stmt_devolver);
 
                                 if ($dias_atraso > 0 && $valor_multa_por_dia > 0) {
-                                    // RN04: cálculo automatizado de multas por dias de atraso[cite: 5].
+                                    // RN04: cálculo automatizado de multas por dias de atraso.
                                     $valor_multa = round($dias_atraso * $valor_multa_por_dia, 2);
 
                                     $sql_multa = "INSERT INTO tbl_multa (id_emprestimo, valor, status_multa)
@@ -295,7 +297,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                             mysqli_stmt_close($stmt_multa);
                                             $conn->commit();
 
-                                            $_SESSION["mensagem_emprestimos"] = "Devolução registrada. Atraso de " . $dias_atraso . " dia(s); multa de R$ " . number_format($valor_multa, 2, ",", ".") . " registrada como pendente (RN04)[cite: 5].";
+                                            $_SESSION["mensagem_emprestimos"] = "Devolução registrada. Atraso de " . $dias_atraso . " dia(s); multa de R$ " . number_format($valor_multa, 2, ",", ".") . " registrada como pendente.";
                                             header("Location: emprestimos.php");
                                             exit;
                                         } else {
@@ -392,16 +394,12 @@ if ($is_admin) {
   <!-- CONTENT -->
   <main class="content">
 
-    <?php if (!empty($mensagem)): ?>
-      <div class="test-block" style="background-color: #fff3cd; border-left: 4px solid #ffc107; margin-bottom: 1.5rem; padding: 1rem;">
-        <p style="margin: 0; color: #856404;"><strong>Aviso:</strong> <?php echo htmlspecialchars($mensagem, ENT_QUOTES, 'UTF-8'); ?></p>
-      </div>
-    <?php endif; ?>
+    <?php echo aviso_html($mensagem, $mensagem_tipo); ?>
 
     <!-- 1. REGISTRAR EMPRÉSTIMO -->
     <section id="formularios" class="test-block">
       <h2>Registrar Empréstimo</h2>
-      <p>O prazo padrão de devolução é de 14 dias corridos (RN03)[cite: 5].</p>
+      <p>O prazo padrão de devolução é de 14 dias corridos.</p>
 
       <form action="" method="POST">
         <input type="hidden" name="acao" value="emprestar">
@@ -489,7 +487,7 @@ if ($is_admin) {
                     <form action="" method="POST" style="margin: 0;">
                       <input type="hidden" name="acao" value="devolver">
                       <input type="hidden" name="id_emprestimo" value="<?php echo (int)$emprestimo['id_emprestimo']; ?>">
-                      <button type="submit" style="padding: 4px 8px; font-size: 0.85rem;">Devolver</button>
+                      <button type="submit" class="btn-sm">Devolver</button>
                     </form>
                   <?php else: ?>
                     Devolvido
@@ -503,7 +501,7 @@ if ($is_admin) {
         <p>Nenhum empréstimo registrado.</p>
       <?php endif; ?>
 
-      <p style="margin-top: 1.5rem; font-size: 0.9rem; color: #666;">
+      <p class="nota">
         Taxa diária de multa configurada: <strong>R$ <?php echo number_format($valor_multa_por_dia, 2, ",", "."); ?></strong>
       </p>
     </section>

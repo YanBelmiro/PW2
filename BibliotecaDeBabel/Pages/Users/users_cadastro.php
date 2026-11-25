@@ -1,4 +1,5 @@
 <?php
+require_once "../../Includes/aviso.php";
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -97,13 +98,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     <section id="formularios" class="test-block">
       <h2>Cadastro de Novo Usuário</h2>
-      <p>Crie sua conta para acessar o sistema de acervo e realizar empréstimos (perfil padrão: Leitor)[cite: 4].</p>
+      <p>Crie sua conta para acessar o sistema de acervo e realizar empréstimos (perfil padrão: Leitor).</p>
 
-      <?php if (!empty($mensagem)): ?>
-        <div class="test-block" style="background-color: <?php echo $sucesso ? '#e6ffec' : '#ffe6e6'; ?>; border-left: 4px solid <?php echo $sucesso ? '#28a745' : '#ff4d4d'; ?>; margin-bottom: 1.5rem; padding: 1rem;">
-          <p style="margin: 0; color: <?php echo $sucesso ? '#155724' : '#b30000'; ?>;"><strong><?php echo $sucesso ? 'Sucesso:' : 'Aviso:'; ?></strong> <?php echo htmlspecialchars($mensagem, ENT_QUOTES, 'UTF-8'); ?></p>
-        </div>
-      <?php endif; ?>
+      <?php echo aviso_html($mensagem, $sucesso ? "sucesso" : "erro"); ?>
 
       <form action="" method="POST">
         <fieldset>
@@ -152,9 +149,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <h3>Termos e Regras da Biblioteca</h3>
     <p>Ao se cadastrar, você concorda com as regras de empréstimo da Biblioteca de Babel:</p>
     <ul>
-      <li>Limite de até 3 empréstimos ativos simultâneos (RN01)[cite: 4].</li>
-      <li>Prazo padrão de devolução de 14 dias corridos (RN03)[cite: 5].</li>
-      <li>Bloqueio automático de novos empréstimos caso existam multas pendentes (RN02)[cite: 4, 5].</li>
+      <li>Limite de até 3 empréstimos ativos simultâneos.</li>
+      <li>Prazo padrão de devolução de 14 dias corridos.</li>
+      <li>Bloqueio automático de novos empréstimos caso existam multas pendentes.</li>
     </ul>
     <div class="inline-group" style="justify-content: flex-end; margin-top: 1.5rem;">
       <button type="button" id="close-modal-btn">Entendi</button>
