@@ -40,7 +40,7 @@ $is_admin = $usuario_logado && (isset($_SESSION["tipo_usuario"]) && $_SESSION["t
     <?php else: ?>
       <a href="<?php echo $prefixo; ?>../Acervo/livros_catalogo.php">Livros</a>
       <a href="<?php echo $prefixo; ?>../Acervo/autores_catalogo.php">Autores</a>
-      <a href="<?php echo $prefixo; ?>../Acervo/livros_babel.php">Biblioteca Procedural</a>
+      <a href="<?php echo $prefixo; ?>../Acervo/livros_babel.php">Leituras</a>
       <a href="<?php echo $prefixo; ?>../Emprestimos/emprestimos.php">Empréstimos</a>
       <a href="<?php echo $prefixo; ?>../Emprestimos/multas.php">Multas</a>
 
