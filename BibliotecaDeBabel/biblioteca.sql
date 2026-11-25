@@ -1,3 +1,4 @@
+
 CREATE DATABASE IF NOT EXISTS db_biblioteca_de_babel
 CHARACTER SET utf8mb4
 COLLATE utf8mb4_unicode_ci;
@@ -15,15 +16,18 @@ CREATE TABLE IF NOT EXISTS tbl_autor (
     PRIMARY KEY (id_autor)
 ) ENGINE=InnoDB;
 
--- LIVRO
+-- LIVRO (somente REGISTROS: o conteúdo de todo livro é procedural, em Includes/babel_core.php)
+-- babel_numero/babel_hash: posição do livro no acervo infinito. Um registro aqui
+-- sobrepõe título, autor e ano que o livro teria de forma procedural.
 CREATE TABLE IF NOT EXISTS tbl_livro (
     id_livro INT AUTO_INCREMENT,
     titulo VARCHAR(150) NOT NULL,
     ano_publicacao INT,
     id_autor INT NOT NULL,
-    gerado_aleatoriamente BOOLEAN DEFAULT FALSE, -- Diferencial: Biblioteca de Babel
-    conteudo_gerado TEXT,                         -- Armazena o texto gerado proceduralmente (se aplicável)
+    babel_numero VARCHAR(4700) CHARACTER SET ascii NULL,
+    babel_hash CHAR(64) CHARACTER SET ascii NULL,
     PRIMARY KEY (id_livro),
+    UNIQUE KEY uq_livro_babel_hash (babel_hash),
     FOREIGN KEY (id_autor) REFERENCES tbl_autor(id_autor)
     ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB;
@@ -76,3 +80,5 @@ CREATE TABLE IF NOT EXISTS tbl_multa (
 UPDATE tbl_usuario 
 SET tipo_usuario = 'admin' 
 WHERE email = 'admin@biblioteca.com';
+
+

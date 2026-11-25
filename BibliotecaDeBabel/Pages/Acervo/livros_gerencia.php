@@ -1,3 +1,4 @@
+
 <?php
 require_once "../../Includes/aviso.php";
 date_default_timezone_set("America/Sao_Paulo");
@@ -7,6 +8,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 require_once "../../Includes/autor_avatar.php";
+require_once "../../Includes/babel_core.php";
 
 if (!isset($_SESSION["id_usuario"])) {
     header("Location: ../index.php");
@@ -31,7 +33,7 @@ if ($conn->connect_error) {
 }
 
 $mensagem = $_SESSION["mensagem_acervo"] ?? "";
-$mensagem_tipo = ($mensagem !== "") ? "sucesso" : "erro"; 
+$mensagem_tipo = ($mensagem !== "") ? "sucesso" : "erro"; // flash = sucesso; validações diretas = erro
 unset($_SESSION["mensagem_acervo"]);
 
 $autor_cadastrado = $_SESSION["autor_cadastrado"] ?? null;
@@ -86,15 +88,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         } elseif ($ano_texto !== "" && (!ctype_digit($ano_texto) || $ano_publicacao < 0 || $ano_publicacao > (int)date("Y"))) {
             $mensagem = "Informe um ano de publicação válido.";
         } else {
-            $sql = "INSERT INTO tbl_livro (titulo, ano_publicacao, id_autor, gerado_aleatoriamente)
-                    VALUES (?, ?, ?, 0)";
+            $sql = "INSERT INTO tbl_livro (titulo, ano_publicacao, id_autor)
+                    VALUES (?, ?, ?)";
             $stmt = mysqli_prepare($conn, $sql);
 
             if ($stmt) {
                 mysqli_stmt_bind_param($stmt, "sii", $titulo, $ano_publicacao, $id_autor);
 
                 if (mysqli_stmt_execute($stmt)) {
-                    $_SESSION["mensagem_acervo"] = "Livro cadastrado com sucesso.";
+                    // O n-ésimo livro registrado sobrepõe o livro procedural nº n (ou o próximo número livre).
+                    $novo_id = mysqli_stmt_insert_id($stmt);
+                    $numero_novo = babel_proximo_numero_livre($conn, $novo_id);
+                    $hash_novo = babel_hash_numero($numero_novo);
+                    $stmt_pos = mysqli_prepare($conn, "UPDATE tbl_livro SET babel_numero = ?, babel_hash = ? WHERE id_livro = ?");
+                    if ($stmt_pos) {
+                        mysqli_stmt_bind_param($stmt_pos, "ssi", $numero_novo, $hash_novo, $novo_id);
+                        mysqli_stmt_execute($stmt_pos);
+                        mysqli_stmt_close($stmt_pos);
+                    }
+                    $_SESSION["mensagem_acervo"] = "Livro cadastrado com sucesso no nº " . $numero_novo . " do acervo.";
                     mysqli_stmt_close($stmt);
                     header("Location: livros_gerencia.php");
                     exit;
@@ -124,7 +136,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         } else {
             $sql = "UPDATE tbl_livro
                     SET titulo = ?, ano_publicacao = ?, id_autor = ?
-                    WHERE id_livro = ? AND gerado_aleatoriamente = 0";
+                    WHERE id_livro = ?";
             $stmt = mysqli_prepare($conn, $sql);
 
             if ($stmt) {
@@ -155,7 +167,7 @@ $id_editar = (int)($_GET["editar"] ?? 0);
 if ($id_editar > 0) {
     $sql_editar = "SELECT id_livro, titulo, ano_publicacao, id_autor
                    FROM tbl_livro
-                   WHERE id_livro = ? AND gerado_aleatoriamente = 0";
+                   WHERE id_livro = ?";
     $stmt_editar = mysqli_prepare($conn, $sql_editar);
 
     if ($stmt_editar) {
@@ -170,7 +182,6 @@ if ($id_editar > 0) {
 $sql_livros = "SELECT l.id_livro, l.titulo, l.ano_publicacao, l.id_autor, a.nome_autor
                FROM tbl_livro l
                INNER JOIN tbl_autor a ON a.id_autor = l.id_autor
-               WHERE l.gerado_aleatoriamente = 0
                ORDER BY l.titulo";
 $livros = mysqli_query($conn, $sql_livros);
 ?>
@@ -276,7 +287,7 @@ $livros = mysqli_query($conn, $sql_livros);
       </form>
     </section>
 
-    <!-- 3. LIVROS CADASTRADOS -->
+    <!-- 3. TABELA DE LIVROS CADASTRADOS -->
     <section id="tabelas-semanticos" class="test-block">
       <h2>Livros Tradicionais Cadastrados</h2>
 
@@ -323,3 +334,6 @@ $livros = mysqli_query($conn, $sql_livros);
 <?php
 $conn->close();
 ?>
+
+
+

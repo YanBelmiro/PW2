@@ -1,3 +1,4 @@
+
 <?php
 date_default_timezone_set("America/Sao_Paulo");
 
@@ -30,7 +31,7 @@ $sql = "SELECT a.id_autor, a.nome_autor, a.nacionalidade,
                COUNT(l.id_livro) AS total_livros
         FROM tbl_autor a
         LEFT JOIN tbl_livro l
-            ON l.id_autor = a.id_autor AND l.gerado_aleatoriamente = 0
+            ON l.id_autor = a.id_autor
         GROUP BY a.id_autor, a.nome_autor, a.nacionalidade
         ORDER BY a.nome_autor";
 $resultado = mysqli_query($conn, $sql);
@@ -93,3 +94,5 @@ $resultado = mysqli_query($conn, $sql);
 <?php
 $conn->close();
 ?>
+
+

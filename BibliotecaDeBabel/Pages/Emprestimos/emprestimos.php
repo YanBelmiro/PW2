@@ -1,3 +1,4 @@
+
 <?php
 require_once "../../Includes/aviso.php";
 date_default_timezone_set("America/Sao_Paulo");
@@ -29,8 +30,11 @@ $mensagem = $_SESSION["mensagem_emprestimos"] ?? "";
 $mensagem_tipo = ($mensagem !== "") ? "sucesso" : "erro"; // flash = sucesso; validações diretas = erro
 unset($_SESSION["mensagem_emprestimos"]);
 
-$valor_multa_por_dia = 2.00; // taxa fixa diária
+// O documento do projeto não informa o valor diário da multa.
+// Defina aqui o valor aprovado pelo administrador antes de usar o cálculo da RN04.
+$valor_multa_por_dia = 2.00; // Exemplo de taxa fixa diária
 
+// Marca como atrasados os empréstimos que passaram do prazo e ainda não foram devolvidos.
 $sql_atrasados = "UPDATE tbl_emprestimo
                   SET status = 'atrasado'
                   WHERE status = 'ativo' AND data_devolucao_prevista < CURDATE()";
@@ -51,6 +55,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $pode_emprestar = true;
             $mensagem_erro = "";
 
+            // Bloqueia a linha do usuário para impedir que dois pedidos simultâneos
+            // ultrapassem o limite de três empréstimos ativos.
             $sql_usuario = "SELECT id_usuario FROM tbl_usuario WHERE id_usuario = ? FOR UPDATE";
             $stmt_usuario = mysqli_prepare($conn, $sql_usuario);
 
@@ -70,9 +76,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $mensagem_erro = "Erro ao verificar o usuário.";
             }
 
+            // Bloqueia a linha do livro e confirma que ele pertence ao acervo tradicional.
             if ($pode_emprestar) {
                 $sql_livro = "SELECT id_livro FROM tbl_livro
-                              WHERE id_livro = ? AND gerado_aleatoriamente = 0
+                              WHERE id_livro = ?
                               FOR UPDATE";
                 $stmt_livro = mysqli_prepare($conn, $sql_livro);
 
@@ -85,7 +92,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
                     if (!$livro_existe) {
                         $pode_emprestar = false;
-                        $mensagem_erro = "O livro não existe ou não pertence ao acervo tradicional.";
+                        $mensagem_erro = "O livro não existe ou não está registrado no acervo.";
                     }
                 } else {
                     $pode_emprestar = false;
@@ -93,6 +100,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 }
             }
 
+            // RN01: no máximo três empréstimos que ainda não foram devolvidos.
             if ($pode_emprestar) {
                 $sql_limite = "SELECT COUNT(*) AS total
                                FROM tbl_emprestimo
@@ -116,6 +124,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 }
             }
 
+            // RN02: uma multa pendente bloqueia um novo empréstimo.
             if ($pode_emprestar) {
                 $sql_multas = "SELECT COUNT(*) AS total
                                FROM tbl_multa m
@@ -140,6 +149,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 }
             }
 
+            // Um exemplar não pode ter dois empréstimos ativos ao mesmo tempo.
             if ($pode_emprestar) {
                 $sql_disponibilidade = "SELECT COUNT(*) AS total
                                         FROM tbl_emprestimo
@@ -164,6 +174,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
 
             if ($pode_emprestar) {
+                // RN03: prazo de 14 dias corridos a partir da data do empréstimo.
                 $sql_insert = "INSERT INTO tbl_emprestimo
                                (id_usuario, id_livro, data_emprestimo, data_devolucao_prevista, status)
                                VALUES (?, ?, CURDATE(), DATE_ADD(CURDATE(), INTERVAL 14 DAY), 'ativo')";
@@ -197,6 +208,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
     }
 
+    // DEVOLUÇÃO DE EMPRÉSTIMO
     if ($acao === "devolver") {
         $id_emprestimo = (int)($_POST["id_emprestimo"] ?? 0);
 
@@ -326,8 +338,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 $sql_livros = "SELECT l.id_livro, l.titulo, a.nome_autor
                FROM tbl_livro l
                INNER JOIN tbl_autor a ON a.id_autor = l.id_autor
-               WHERE l.gerado_aleatoriamente = 0
-                 AND NOT EXISTS (
+               WHERE NOT EXISTS (
                      SELECT 1 FROM tbl_emprestimo e
                      WHERE e.id_livro = l.id_livro
                        AND e.status IN ('ativo', 'atrasado')
@@ -504,3 +515,6 @@ if (isset($stmt_lista)) {
 }
 $conn->close();
 ?>
+
+
+

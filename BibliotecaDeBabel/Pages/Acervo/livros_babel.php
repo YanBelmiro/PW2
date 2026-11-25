@@ -1,5 +1,7 @@
 <?php
 require_once "../../Includes/aviso.php";
+require_once "../../Includes/babel_core.php";
+require_once "../../Includes/autor_avatar.php";
 date_default_timezone_set("America/Sao_Paulo");
 
 if (session_status() === PHP_SESSION_NONE) {
@@ -11,23 +13,13 @@ if (!isset($_SESSION["id_usuario"])) {
     exit;
 }
 
-/*
- * BIBLIOTECA DE BABEL
- * Universo inicial: livros 1 a 10.000.
- * O conteúdo é gerado deterministicamente e indexado quando a página é aberta.
- */
+$is_admin = (($_SESSION["tipo_usuario"] ?? "") === "admin");
 
-const BABEL_ALFABETO = "abcdefghijklmnopqrstuv,. ";
-const BABEL_SIMBOLOS = 25;
-const BABEL_PAGINAS = 410;
-const BABEL_LINHAS = 40;
-const BABEL_CARACTERES_LINHA = 80;
-const BABEL_CARACTERES_PAGINA = 3200;
-const BABEL_PAREDES = 4;
-const BABEL_ESTANTES_POR_PAREDE = 5;
-const BABEL_LIVROS_POR_ESTANTE = 32;
-const BABEL_LIVROS_POR_HEXAGONO = 640;
-const BABEL_CATALOGO_INICIAL = 10000;
+/*
+ * BIBLIOTECA DE BABEL — o acervo completo.
+ * Todas as 29^3200 páginas existem. Aqui só se calcula; nada é indexado.
+ * Registros de tbl_livro sobrepõem título/autor/ano; o conteúdo é sempre o procedural.
+ */
 
 mysqli_report(MYSQLI_REPORT_OFF);
 $conn = new mysqli("localhost", "root", "", "db_biblioteca_de_babel");
@@ -38,294 +30,142 @@ if ($conn->connect_error) {
 }
 $conn->set_charset("utf8mb4");
 
-function babel_hash_bytes(string $semente, int $bloco): string {
-    return hash("sha256", $semente . "|bloco|" . $bloco, true);
-}
-
-/*
- * Gera 3.200 símbolos por página.
- * O descarte de bytes de 250 a 255 evita viés na conversão para 25 símbolos.
- * A mesma combinação livro/página sempre produz o mesmo texto.
- */
-function babel_gerar_pagina(int $livroId, int $pagina): string {
-    $texto = "";
-    $bloco = 0;
-    $alfabeto = BABEL_ALFABETO;
-    $tamanhoAlfabeto = strlen($alfabeto);
-
-    while (strlen($texto) < BABEL_CARACTERES_PAGINA) {
-        $bytes = babel_hash_bytes("babel-v1|livro|" . $livroId . "|pagina|" . $pagina, $bloco);
-        $bloco++;
-
-        $quantidade = strlen($bytes);
-        for ($i = 0; $i < $quantidade; $i++) {
-            $valor = ord($bytes[$i]);
-
-            if ($valor >= 250) {
-                continue;
-            }
-
-            $texto .= $alfabeto[$valor % $tamanhoAlfabeto];
-
-            if (strlen($texto) >= BABEL_CARACTERES_PAGINA) {
-                break;
-            }
-        }
-    }
-
-    $linhas = str_split($texto, BABEL_CARACTERES_LINHA);
-    return implode("\n", $linhas);
-}
-
-function babel_normalizar_pagina(string $texto): string {
-    $texto = str_replace(["\r\n", "\r"], "\n", $texto);
-    $linhas = explode("\n", $texto);
-    $linhas = array_map(static function ($linha) {
-        return rtrim($linha);
-    }, $linhas);
-    return implode("\n", $linhas);
-}
-
-function babel_calcular_endereco(int $livroId): array {
-    $indice = $livroId - 1;
-    $hexagono = intdiv($indice, BABEL_LIVROS_POR_HEXAGONO) + 1;
-    $posicaoHexagono = $indice % BABEL_LIVROS_POR_HEXAGONO;
-
-    $livrosPorParede = BABEL_ESTANTES_POR_PAREDE * BABEL_LIVROS_POR_ESTANTE;
-    $parede = intdiv($posicaoHexagono, $livrosPorParede) + 1;
-    $posicaoParede = $posicaoHexagono % $livrosPorParede;
-    $estante = intdiv($posicaoParede, BABEL_LIVROS_POR_ESTANTE) + 1;
-    $posicaoLivro = ($posicaoParede % BABEL_LIVROS_POR_ESTANTE) + 1;
-
-    return [
-        "hexagono" => $hexagono,
-        "parede" => $parede,
-        "estante" => $estante,
-        "posicao" => $posicaoLivro
-    ];
-}
-
-/* Metadados determinísticos: cada livro mantém autor e título. */
-function babel_metadados_livro(int $livroId, int $totalAutores = 20): array {
-    $hash = hash("sha256", "babel-metadados-v1|" . $livroId);
-    $autorId = (hexdec(substr($hash, 0, 7)) % $totalAutores) + 1;
-
-    $substantivos = [
-        "Bananas", "Labirintos", "Memórias", "Sombras", "Macacos",
-        "Espelhos", "Bibliotecas", "Silêncios", "Estrelas", "Galhos",
-        "Abismos", "Relógios", "Jardins", "Sonhos", "Paradoxos",
-        "Fragmentos", "Máquinas", "Ilhas", "Ciclos", "Ecos"
-    ];
-    $complementos = [
-        "do Infinito", "de uma Banana", "sem Macacos", "da Sexta Parede",
-        "e Outros Primatas", "do Tempo Perdido", "em um Labirinto",
-        "da Floresta Imóvel", "para um Leitor Impossível", "sob o Mesmo Céu",
-        "de um Mundo Circular", "na Última Estante", "do Acaso",
-        "e a Natureza das Coisas", "de um Bibliotecário"
-    ];
-    $adjetivos = [
-        "Invisíveis", "Improváveis", "Mecânicos", "Silenciosos", "Eternos",
-        "Desobedientes", "Imaginários", "Perdidos", "Inacabados", "Azuis"
-    ];
-
-    $n1 = hexdec(substr($hash, 8, 7)) % count($substantivos);
-    $n2 = hexdec(substr($hash, 16, 7)) % count($complementos);
-    $n3 = hexdec(substr($hash, 24, 7)) % count($adjetivos);
-
-    $formatos = [
-        $substantivos[$n1] . " " . $complementos[$n2],
-        "A Teoria dos " . $adjetivos[$n3] . " " . $substantivos[$n1],
-        "Tratado sobre " . strtolower($substantivos[$n1]) . " " . strtolower($complementos[$n2]),
-        "O Livro " . $adjetivos[$n3] . " " . $complementos[$n2]
-    ];
-    $formato = hexdec(substr($hash, 32, 7)) % count($formatos);
-
-    return ["autor_id" => $autorId, "titulo" => $formatos[$formato]];
-}
-
-function babel_registrar_livro(mysqli $conn, int $livroId): bool {
-    $meta = babel_metadados_livro($livroId);
-    $sql = "INSERT INTO babel_livro_catalogo
-                (id_livro, id_autor_babel, titulo)
-            VALUES (?, ?, ?)
-            ON DUPLICATE KEY UPDATE ultima_visita = CURRENT_TIMESTAMP";
-    $stmt = $conn->prepare($sql);
-    if (!$stmt) return false;
-
-    $stmt->bind_param("iis", $livroId, $meta["autor_id"], $meta["titulo"]);
-    $ok = $stmt->execute();
-    $stmt->close();
-    return $ok;
-}
-
-function babel_indexar_pagina(mysqli $conn, int $livroId, int $pagina, string $conteudo): bool {
-    $normalizado = babel_normalizar_pagina($conteudo);
-    $hash = hash("sha256", $normalizado);
-
-    $sql = "INSERT INTO babel_pagina_indice
-                (id_livro, pagina, conteudo, hash_conteudo)
-            VALUES (?, ?, ?, ?)
-            ON DUPLICATE KEY UPDATE
-                conteudo = VALUES(conteudo),
-                hash_conteudo = VALUES(hash_conteudo),
-                indexada_em = CURRENT_TIMESTAMP";
-    $stmt = $conn->prepare($sql);
-    if (!$stmt) return false;
-
-    $stmt->bind_param("iiss", $livroId, $pagina, $normalizado, $hash);
-    $ok = $stmt->execute();
-    $stmt->close();
-    return $ok;
-}
-
-function babel_buscar_autor(mysqli $conn, int $autorId): ?array {
-    $stmt = $conn->prepare(
-        "SELECT id_autor_babel, nome_autor, descricao, especie, foto_path
-         FROM babel_autor WHERE id_autor_babel = ?"
-    );
-    if (!$stmt) return null;
-
-    $stmt->bind_param("i", $autorId);
-    $stmt->execute();
-    $resultado = $stmt->get_result();
-    $autor = $resultado ? $resultado->fetch_assoc() : null;
-    $stmt->close();
-    return $autor ?: null;
-}
-
-function babel_buscar_livro(mysqli $conn, int $livroId): ?array {
-    $stmt = $conn->prepare(
-        "SELECT l.id_livro, l.titulo, l.id_autor_babel,
-                a.nome_autor, a.descricao, a.especie, a.foto_path
-         FROM babel_livro_catalogo l
-         INNER JOIN babel_autor a ON a.id_autor_babel = l.id_autor_babel
-         WHERE l.id_livro = ?"
-    );
-    if (!$stmt) return null;
-
-    $stmt->bind_param("i", $livroId);
-    $stmt->execute();
-    $resultado = $stmt->get_result();
-    $livro = $resultado ? $resultado->fetch_assoc() : null;
-    $stmt->close();
-    return $livro ?: null;
-}
-
 function babel_h($valor): string {
     return htmlspecialchars((string)$valor, ENT_QUOTES, "UTF-8");
 }
 
+function babel_link(string $livro, int $pagina, array $extra = []): string {
+    $url = "livros_babel.php?livro=" . $livro . "&pagina=" . $pagina;
+    foreach ($extra as $k => $v) {
+        $url .= "&" . $k . "=" . (int)$v;
+    }
+    return $url;
+}
+
 $mensagem = "";
-$resultadosBusca = [];
-$termoBusca = trim($_POST["termo"] ?? "");
-$tipoBusca = $_POST["tipo_busca"] ?? "trecho";
-$livroId = isset($_GET["livro_id"]) ? (int)$_GET["livro_id"] : 1542;
-$pagina = isset($_GET["pagina"]) ? (int)$_GET["pagina"] : 1;
-
-if ($livroId < 1 || $livroId > BABEL_CATALOGO_INICIAL) {
-    $livroId = 1;
-    $mensagem = "O catálogo inicial contém livros de 1 a " . BABEL_CATALOGO_INICIAL . ".";
-}
-if ($pagina < 1 || $pagina > BABEL_PAGINAS) {
-    $pagina = 1;
-    $mensagem = "A página deve estar entre 1 e " . BABEL_PAGINAS . ".";
+$tipoMensagem = "atencao";
+if (isset($_SESSION["mensagem_babel"])) {
+    [$mensagem, $tipoMensagem] = $_SESSION["mensagem_babel"];
+    unset($_SESSION["mensagem_babel"]);
 }
 
-/* Pesquisa somente sobre páginas previamente indexadas. */
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["acao"]) && $_POST["acao"] === "buscar") {
-    if ($termoBusca === "") {
-        $mensagem = "Digite um trecho ou cole o conteúdo de uma página.";
-    } elseif ($tipoBusca === "pagina") {
-        $paginaPesquisada = babel_normalizar_pagina($termoBusca);
+$termoBusca = (string)($_POST["termo"] ?? "");   // sem trim: espaços das pontas fazem parte de uma página
+$modoBusca = $_POST["modo"] ?? "aleatorio";
+if (!in_array($modoBusca, ["inicio", "aleatorio", "pagina"], true)) {
+    $modoBusca = "aleatorio";
+}
+$sementeBusca = substr(trim($_POST["semente"] ?? ""), 0, 64);
 
-        if (strlen($paginaPesquisada) < 3000) {
-            $mensagem = "Para pesquisar uma página inteira, cole o conteúdo completo (40 linhas de 80 caracteres).";
+/* ---------------- Ações POST ---------------- */
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    $acao = $_POST["acao"] ?? "";
+
+    if ($acao === "buscar") {
+        try {
+            $r = babel_buscar_trecho($termoBusca, $modoBusca, $sementeBusca);
+        } catch (Throwable $e) {
+            $r = ["ok" => false, "erro" => "Não foi possível calcular o endereço deste texto."];
+        }
+        if ($r["ok"]) {
+            header("Location: " . babel_link(babel_str($r["numero"]), $r["pagina"], ["dest" => $r["posicao"], "tam" => $r["tamanho"]]));
+            exit;
+        }
+        $mensagem = $r["erro"];
+    }
+
+    if ($acao === "registrar" && $is_admin) {
+        $numeroReg = babel_parse_numero($_POST["livro"] ?? "");
+        $paginaReg = max(1, (int)($_POST["pagina"] ?? 1));
+        $titulo = trim($_POST["titulo"] ?? "");
+        $anoTexto = trim($_POST["ano_publicacao"] ?? "");
+        $idAutor = (int)($_POST["id_autor"] ?? 0);
+        $ano = ($anoTexto === "") ? null : (int)$anoTexto;
+
+        if ($numeroReg === null) {
+            $mensagem = "Número de livro inválido.";
+        } elseif ($titulo === "" || mb_strlen($titulo, "UTF-8") > 150 || $idAutor <= 0) {
+            $mensagem = "Informe o título (até 150 caracteres) e selecione um autor.";
+        } elseif ($anoTexto !== "" && (!ctype_digit($anoTexto) || $ano > (int)date("Y"))) {
+            $mensagem = "Informe um ano de publicação válido.";
         } else {
-            $hashBusca = hash("sha256", $paginaPesquisada);
-            $stmt = $conn->prepare(
-                "SELECT i.id_livro, i.pagina, l.titulo, a.nome_autor
-                 FROM babel_pagina_indice i
-                 INNER JOIN babel_livro_catalogo l ON l.id_livro = i.id_livro
-                 INNER JOIN babel_autor a ON a.id_autor_babel = l.id_autor_babel
-                 WHERE i.hash_conteudo = ? AND i.conteudo = ?
-                 ORDER BY i.id_livro, i.pagina LIMIT 100"
-            );
+            $res = babel_registrar_livro($conn, babel_str($numeroReg), $titulo, $ano, $idAutor);
+            $_SESSION["mensagem_babel"] = [$res["msg"], $res["ok"] ? "sucesso" : "erro"];
+            header("Location: " . babel_link(babel_str($numeroReg), $paginaReg));
+            exit;
+        }
+    }
+}
 
-            if ($stmt) {
-                $stmt->bind_param("ss", $hashBusca, $paginaPesquisada);
-                $stmt->execute();
-                $res = $stmt->get_result();
-                while ($res && ($linha = $res->fetch_assoc())) $resultadosBusca[] = $linha;
-                $stmt->close();
-            }
-            if (!$resultadosBusca) {
-                $mensagem = "Nenhuma correspondência exata entre as páginas já indexadas.";
-            }
+/* ---------------- Navegação (GET) ---------------- */
+if (isset($_GET["aleatorio"])) {
+    header("Location: " . babel_link(babel_str(babel_numero_aleatorio()), 1));
+    exit;
+}
+
+$numero = babel_parse_numero($_GET["livro"] ?? "1");
+if ($numero === null) {
+    $numero = gmp_init(1);
+    $mensagem = "Número de livro inválido. O acervo vai de 1 até um número de " . strlen(babel_str(babel_total_livros())) . " dígitos.";
+}
+
+/* Endereço físico: hexágono + parede + estante + posição. */
+if (isset($_GET["hexagono"])) {
+    $hexTexto = preg_replace('/[\s._]/', '', (string)$_GET["hexagono"]);
+    $parede = (int)($_GET["parede"] ?? 1);
+    $estante = (int)($_GET["estante"] ?? 1);
+    $posicao = (int)($_GET["posicao"] ?? 1);
+    if ($hexTexto !== "" && ctype_digit($hexTexto) && strlen($hexTexto) <= BABEL_NUMERO_MAX_DIGITOS
+        && gmp_cmp(gmp_init($hexTexto, 10), 1) >= 0
+        && $parede >= 1 && $parede <= BABEL_PAREDES
+        && $estante >= 1 && $estante <= BABEL_ESTANTES_POR_PAREDE
+        && $posicao >= 1 && $posicao <= BABEL_LIVROS_POR_ESTANTE) {
+        $candidato = babel_numero_do_endereco(gmp_init($hexTexto, 10), $parede, $estante, $posicao);
+        if (gmp_cmp($candidato, babel_total_livros()) <= 0) {
+            $numero = $candidato;
+            $mensagem = "";
+        } else {
+            $mensagem = "Esse hexágono está além do fim da biblioteca.";
         }
     } else {
-        if (mb_strlen($termoBusca, "UTF-8") < 3) {
-            $mensagem = "Use pelo menos 3 caracteres para pesquisar um trecho.";
-        } elseif (mb_strlen($termoBusca, "UTF-8") > 1000) {
-            $mensagem = "O trecho de pesquisa deve ter no máximo 1.000 caracteres. Para páginas inteiras, use a outra modalidade.";
-        } else {
-            $padrao = "%" . addcslashes($termoBusca, "\\%_") . "%";
-            $stmt = $conn->prepare(
-                "SELECT i.id_livro, i.pagina, l.titulo, a.nome_autor,
-                        LOCATE(?, i.conteudo) AS posicao
-                 FROM babel_pagina_indice i
-                 INNER JOIN babel_livro_catalogo l ON l.id_livro = i.id_livro
-                 INNER JOIN babel_autor a ON a.id_autor_babel = l.id_autor_babel
-                 WHERE i.conteudo LIKE ?
-                 ORDER BY i.id_livro, i.pagina LIMIT 100"
-            );
-
-            if ($stmt) {
-                $stmt->bind_param("ss", $termoBusca, $padrao);
-                $stmt->execute();
-                $res = $stmt->get_result();
-                while ($res && ($linha = $res->fetch_assoc())) $resultadosBusca[] = $linha;
-                $stmt->close();
-            }
-            if (!$resultadosBusca) {
-                $mensagem = "Trecho não encontrado nas páginas já indexadas. Abra mais páginas do catálogo para ampliar a pesquisa.";
-            }
-        }
+        $mensagem = "Endereço inválido: use hexágono (inteiro ≥ 1), parede 1–4, estante 1–5 e posição 1–32.";
     }
 }
 
-/* Abre e indexa a página solicitada. */
-if (babel_registrar_livro($conn, $livroId)) {
-    $conteudoPagina = babel_gerar_pagina($livroId, $pagina);
-    $paginaIndexada = babel_indexar_pagina($conn, $livroId, $pagina, $conteudoPagina);
-    if (!$paginaIndexada && $mensagem === "") {
-        $mensagem = "A página foi gerada, mas não foi possível salvá-la no índice de pesquisa.";
-    }
+$numeroTexto = babel_str($numero);
+$paginasDoLivro = babel_paginas_do_livro($numero);
+$pagina = (int)($_GET["pagina"] ?? 1);
+if ($pagina < 1 || $pagina > $paginasDoLivro) {
+    $pagina = 1;
+}
+
+/* Destaque do trecho encontrado (posição e tamanho dentro da página). */
+$dest = isset($_GET["dest"]) ? (int)$_GET["dest"] : -1;
+$tam = isset($_GET["tam"]) ? (int)$_GET["tam"] : 0;
+$temDestaque = ($dest >= 0 && $tam >= 1 && $dest + $tam <= BABEL_CARACTERES_PAGINA);
+
+$exib = babel_exibicao($conn, $numeroTexto);
+$conteudoPagina = babel_gerar_pagina($numero, $pagina);
+$endereco = babel_endereco($numero);
+$hexagonoTexto = babel_str($endereco["hexagono"]);
+
+if ($temDestaque) {
+    $ini = $dest + intdiv($dest, BABEL_CARACTERES_LINHA);
+    $ultimo = $dest + $tam - 1;
+    $fim = $ultimo + intdiv($ultimo, BABEL_CARACTERES_LINHA) + 1;
+    $paginaHtml = babel_h(substr($conteudoPagina, 0, $ini))
+        . "<mark>" . babel_h(substr($conteudoPagina, $ini, $fim - $ini)) . "</mark>"
+        . babel_h(substr($conteudoPagina, $fim));
 } else {
-    $conteudoPagina = babel_gerar_pagina($livroId, $pagina);
-    if ($mensagem === "") {
-        $mensagem = "A página foi gerada, mas não foi possível registrar o livro no catálogo. Verifique se executou o SQL complementar.";
-    }
+    $paginaHtml = babel_h($conteudoPagina);
 }
 
-$livro = babel_buscar_livro($conn, $livroId);
-$endereco = babel_calcular_endereco($livroId);
+$temAnterior = gmp_cmp($numero, 1) > 0;
+$temProximo = gmp_cmp($numero, babel_total_livros()) < 0;
+$livroAnterior = $temAnterior ? babel_str(gmp_sub($numero, 1)) : $numeroTexto;
+$proximoLivro = $temProximo ? babel_str(gmp_add($numero, 1)) : $numeroTexto;
 
-$stmtContagem = $conn->prepare("SELECT COUNT(*) AS total FROM babel_pagina_indice");
-$totalPaginasIndexadas = 0;
-if ($stmtContagem) {
-    $stmtContagem->execute();
-    $resContagem = $stmtContagem->get_result();
-    if ($resContagem) {
-        $linhaContagem = $resContagem->fetch_assoc();
-        $totalPaginasIndexadas = (int)$linhaContagem["total"];
-    }
-    $stmtContagem->close();
-}
-
-$paginaAnterior = max(1, $pagina - 1);
-$proximaPagina = min(BABEL_PAGINAS, $pagina + 1);
-$livroAnterior = max(1, $livroId - 1);
-$proximoLivro = min(BABEL_CATALOGO_INICIAL, $livroId + 1);
+$autoresTbl = $is_admin && !$exib["registrado"] ? $conn->query("SELECT id_autor, nome_autor FROM tbl_autor ORDER BY nome_autor") : false;
+$digitosTotal = strlen(babel_str(babel_total_livros()));
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -344,16 +184,17 @@ $proximoLivro = min(BABEL_CATALOGO_INICIAL, $livroId + 1);
     .babel-meta{display:flex;flex-wrap:wrap;gap:.55rem;margin:.8rem 0}
     .babel-chip{display:inline-block;padding:.35rem .65rem;border:1px solid var(--cosmos-border);border-radius:var(--radius-sm);font:.8rem var(--font-mono);color:var(--cosmos-yellow)}
     .babel-book{white-space:pre;overflow-x:auto;background:var(--cosmos-surface);border:1px solid var(--cosmos-border);border-radius:var(--radius-md);padding:1rem;font:.78rem/1.55 var(--font-mono);color:var(--cosmos-white);max-width:100%}
+    .babel-book mark{background:var(--cosmos-orange);color:#000;border-radius:2px}
     .babel-form{display:grid;gap:.7rem}
+    .babel-inline{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.6rem}
     .babel-nav{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1rem}
     .babel-nav a{padding:.55rem .8rem;border:1px solid var(--cosmos-border);border-radius:var(--radius-md);color:var(--cosmos-white)}
     .babel-nav a:hover{border-color:var(--cosmos-orange)}
     .babel-monkey{display:flex;gap:1rem;align-items:center}
     .babel-avatar{width:76px;height:76px;flex:0 0 76px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,var(--cosmos-yellow),var(--cosmos-orange));font-size:2.5rem;border:2px solid var(--cosmos-border);overflow:hidden}
     .babel-avatar img{width:100%;height:100%;object-fit:cover}
-    .babel-result{padding:.8rem 0;border-top:1px solid var(--cosmos-border)}
-    .babel-result:first-of-type{border-top:0}
     .babel-muted{color:var(--cosmos-muted);font-size:.9rem}
+    .babel-endereco{font:.72rem/1.4 var(--font-mono);word-break:break-all;width:100%;min-height:5rem}
     @media(max-width:850px){.babel-grid{grid-template-columns:1fr}}
   </style>
 </head>
@@ -361,124 +202,174 @@ $proximoLivro = min(BABEL_CATALOGO_INICIAL, $livroId + 1);
 <?php include "../../Includes/header.php"; ?>
 
 <main class="content">
+
+  <!-- CABEÇALHO -->
   <section class="test-block">
     <h1>Biblioteca de Babel</h1>
-    <p>Um catálogo finito de exploração de uma biblioteca combinatoriamente imensa.</p>
+    <p>Todas as páginas possíveis existem. Os livros registrados apenas recebem um título, um autor e um ano; o texto é sempre o mesmo.</p>
     <div class="babel-meta">
-      <span class="babel-chip">CATÁLOGO #1–#<?php echo BABEL_CATALOGO_INICIAL; ?></span>
-      <span class="babel-chip"><?php echo number_format($totalPaginasIndexadas, 0, ",", "."); ?> páginas indexadas</span>
-      <span class="babel-chip">25 símbolos</span>
+      <span class="babel-chip">LIVROS: 1 … (número de <?php echo number_format($digitosTotal, 0, ",", "."); ?> dígitos)</span>
+      <span class="babel-chip">29 símbolos</span>
+      <span class="babel-chip">410 páginas · 40 linhas · 80 colunas</span>
     </div>
-    <?php echo aviso_html($mensagem, "atencao"); ?>
+    <?php echo aviso_html($mensagem, $tipoMensagem); ?>
   </section>
 
+  <!-- 1. LEITURA: a página à esquerda; o livro (autor, endereço, registro) à direita -->
   <div class="babel-grid">
-    <div>
-      <section class="babel-panel">
-        <h2>Localizar um livro</h2>
-        <form class="babel-form" method="GET" action="">
-          <label for="livro_id">Número do livro (1 a <?php echo BABEL_CATALOGO_INICIAL; ?>)</label>
-          <input id="livro_id" type="number" name="livro_id" min="1" max="<?php echo BABEL_CATALOGO_INICIAL; ?>" value="<?php echo $livroId; ?>" required>
-          <label for="pagina">Página (1 a <?php echo BABEL_PAGINAS; ?>)</label>
-          <input id="pagina" type="number" name="pagina" min="1" max="<?php echo BABEL_PAGINAS; ?>" value="<?php echo $pagina; ?>" required>
-          <button type="submit">Abrir livro e página</button>
-        </form>
-      </section>
 
-      <section class="babel-panel">
-        <h2><?php echo babel_h($livro["titulo"] ?? "Livro #" . $livroId); ?></h2>
-        <div class="babel-meta">
-          <span class="babel-chip">Livro #<?php echo $livroId; ?></span>
-          <span class="babel-chip">Página <?php echo $pagina; ?>/<?php echo BABEL_PAGINAS; ?></span>
-          <span class="babel-chip">Hexágono <?php echo $endereco["hexagono"]; ?></span>
-        </div>
-        <div class="babel-book"><?php echo babel_h($conteudoPagina); ?></div>
-        <div class="babel-nav">
-          <a href="?livro_id=<?php echo $livroId; ?>&pagina=<?php echo $paginaAnterior; ?>">← Página anterior</a>
-          <a href="?livro_id=<?php echo $livroId; ?>&pagina=<?php echo $proximaPagina; ?>">Próxima página →</a>
-          <a href="?livro_id=<?php echo $livroAnterior; ?>&pagina=1">← Livro anterior</a>
-          <a href="?livro_id=<?php echo $proximoLivro; ?>&pagina=1">Próximo livro →</a>
-        </div>
-      </section>
-    </div>
+    <section class="babel-panel">
+      <h2><?php echo babel_h($exib["titulo"]); ?></h2>
+      <div class="babel-meta">
+        <span class="babel-chip">Livro #<?php echo babel_h(babel_abreviar($numeroTexto)); ?></span>
+        <span class="babel-chip">Página <?php echo $pagina; ?>/<?php echo $paginasDoLivro; ?></span>
+        <span class="babel-chip"><?php echo $exib["registrado"] ? "Registrado" : "Procedural"; ?></span>
+        <?php if ($exib["ano"] !== null): ?><span class="babel-chip"><?php echo (int)$exib["ano"]; ?></span><?php endif; ?>
+      </div>
+      <div class="babel-book"><?php echo $paginaHtml; ?></div>
+      <?php if ($temDestaque): ?>
+        <p class="babel-muted">O trecho pesquisado está destacado. Esta página sempre existiu: a pesquisa só calculou o endereço dela.</p>
+      <?php endif; ?>
+      <div class="babel-nav">
+        <?php if ($pagina > 1): ?><a href="<?php echo babel_link($numeroTexto, $pagina - 1); ?>">← Página anterior</a><?php endif; ?>
+        <?php if ($pagina < $paginasDoLivro): ?><a href="<?php echo babel_link($numeroTexto, $pagina + 1); ?>">Próxima página →</a><?php endif; ?>
+        <?php if ($temAnterior): ?><a href="<?php echo babel_link($livroAnterior, 1); ?>">← Livro anterior</a><?php endif; ?>
+        <?php if ($temProximo): ?><a href="<?php echo babel_link($proximoLivro, 1); ?>">Próximo livro →</a><?php endif; ?>
+        <a href="livros_babel.php?aleatorio=1">Livro aleatório ↯</a>
+      </div>
+    </section>
 
     <aside>
       <section class="babel-panel">
         <h2>Autor</h2>
-        <?php if ($livro): ?>
+        <?php if ($exib["registrado"]): ?>
+          <div class="babel-monkey">
+            <div><?php echo autor_avatar_html((int)$exib["autor_id"], $exib["autor_nome"], 76); ?></div>
+            <div>
+              <strong><?php echo babel_h($exib["autor_nome"]); ?></strong>
+              <div class="babel-muted">Autor registrado</div>
+            </div>
+          </div>
+          <p class="babel-muted">Registro nº <?php echo (int)$exib["id_livro"]; ?>. Para alterar título, autor ou ano: <a href="livros_gerencia.php?editar=<?php echo (int)$exib["id_livro"]; ?>">Gerenciar Acervo</a>.</p>
+        <?php else: $ab = $exib["autor_babel"]; ?>
           <div class="babel-monkey">
             <div class="babel-avatar">
-              <?php if (!empty($livro["foto_path"])): ?>
-                <img src="<?php echo babel_h("../../" . ltrim($livro["foto_path"], "/")); ?>" alt="Retrato de <?php echo babel_h($livro["nome_autor"]); ?>">
+              <?php if (!empty($ab["foto_path"])): ?>
+                <img src="<?php echo babel_h("../../" . ltrim($ab["foto_path"], "/")); ?>" alt="Retrato de <?php echo babel_h($ab["nome_autor"]); ?>">
               <?php else: ?>
-                🐒
+                <?php echo autor_avatar_html((int)$ab["id_autor_babel"], $ab["nome_autor"], 76) ?: "🐒"; ?>
               <?php endif; ?>
             </div>
             <div>
-              <strong><?php echo babel_h($livro["nome_autor"]); ?></strong>
-              <div class="babel-muted"><?php echo babel_h($livro["especie"] ?? "Primata"); ?></div>
-              <div class="babel-muted">Autor-macaco #<?php echo (int)$livro["id_autor_babel"]; ?></div>
+              <strong><?php echo babel_h($ab["nome_autor"]); ?></strong>
+              <div class="babel-muted"><?php echo babel_h($ab["especie"] ?? "Primata"); ?></div>
+              <div class="babel-muted">Autor-macaco #<?php echo (int)$ab["id_autor_babel"]; ?></div>
             </div>
           </div>
-          <p><?php echo babel_h($livro["descricao"] ?? "Um dos incontáveis autores da biblioteca."); ?></p>
-          <p class="babel-muted">O mesmo livro sempre mantém o mesmo autor e título.</p>
-        <?php else: ?>
-          <p>Não foi possível carregar o perfil do autor. Confira se executou o SQL complementar.</p>
+          <p><?php echo babel_h($ab["descricao"] ?? "Um dos incontáveis autores da biblioteca."); ?></p>
+          <p class="babel-muted">Autor procedural: vale até que um registro sobreponha estes dados.</p>
         <?php endif; ?>
       </section>
 
       <section class="babel-panel">
         <h3>Endereço físico</h3>
-        <p>Hexágono: <strong><?php echo $endereco["hexagono"]; ?></strong></p>
-        <p>Parede: <strong><?php echo $endereco["parede"]; ?></strong> de 4</p>
-        <p>Estante: <strong><?php echo $endereco["estante"]; ?></strong> de 5</p>
-        <p>Posição: <strong><?php echo $endereco["posicao"]; ?></strong> de 32</p>
+        <p>Hexágono: <strong><?php echo babel_h(babel_abreviar($hexagonoTexto)); ?></strong></p>
+        <p>Parede: <strong><?php echo (int)$endereco["parede"]; ?></strong> de 4</p>
+        <p>Estante: <strong><?php echo (int)$endereco["estante"]; ?></strong> de 5</p>
+        <p>Posição: <strong><?php echo (int)$endereco["posicao"]; ?></strong> de 32</p>
+        <details>
+          <summary>Número completo do livro (<?php echo strlen($numeroTexto); ?> dígitos)</summary>
+          <textarea class="babel-endereco" readonly rows="4"><?php echo babel_h($numeroTexto); ?></textarea>
+        </details>
       </section>
+
+      <?php if ($is_admin && !$exib["registrado"]): ?>
+      <section class="babel-panel">
+        <h3>Registrar este livro</h3>
+        <p class="babel-muted">Cria um registro que sobrepõe título, autor e ano deste número. O texto não muda.</p>
+        <form class="babel-form" method="POST" action="livros_babel.php">
+          <input type="hidden" name="acao" value="registrar">
+          <input type="hidden" name="livro" value="<?php echo babel_h($numeroTexto); ?>">
+          <input type="hidden" name="pagina" value="<?php echo $pagina; ?>">
+          <label for="reg_titulo">Título</label>
+          <input id="reg_titulo" type="text" name="titulo" maxlength="150" required value="<?php echo babel_h($exib["titulo"]); ?>">
+          <label for="reg_ano">Ano de publicação</label>
+          <input id="reg_ano" type="number" name="ano_publicacao" min="0" max="<?php echo date("Y"); ?>" value="<?php echo babel_h($exib["ano"] ?? ""); ?>">
+          <label for="reg_autor">Autor</label>
+          <select id="reg_autor" name="id_autor" required>
+            <option value="">Selecione um autor</option>
+            <?php while ($autoresTbl && ($a = $autoresTbl->fetch_assoc())): ?>
+              <option value="<?php echo (int)$a["id_autor"]; ?>"><?php echo babel_h($a["nome_autor"]); ?></option>
+            <?php endwhile; ?>
+          </select>
+          <button type="submit">Registrar</button>
+        </form>
+      </section>
+      <?php endif; ?>
     </aside>
+
   </div>
 
-  <section class="babel-panel">
-    <h2>Pesquisar na Biblioteca</h2>
-    <p>A pesquisa considera todas as páginas que já foram abertas e indexadas neste catálogo. Ao navegar por mais livros e páginas, o índice cresce.</p>
-    <form class="babel-form" method="POST" action="">
-      <input type="hidden" name="acao" value="buscar">
-      <label for="tipo_busca">Tipo de pesquisa</label>
-      <select id="tipo_busca" name="tipo_busca">
-        <option value="trecho" <?php echo $tipoBusca === "trecho" ? "selected" : ""; ?>>Trecho ou frase</option>
-        <option value="pagina" <?php echo $tipoBusca === "pagina" ? "selected" : ""; ?>>Página inteira (correspondência exata)</option>
-      </select>
-      <label for="termo">Texto a procurar</label>
-      <textarea id="termo" name="termo" placeholder="Digite uma frase ou cole as 40 linhas da página..."><?php echo babel_h($termoBusca); ?></textarea>
-      <button type="submit">Pesquisar páginas indexadas</button>
-    </form>
+  <!-- 2. LOCALIZAR: pesquisar um texto ou ir direto a um endereço -->
+  <div class="grid-2">
 
-    <?php if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["acao"]) && $_POST["acao"] === "buscar" && $resultadosBusca): ?>
-      <h3>Resultados encontrados: <?php echo count($resultadosBusca); ?></h3>
-      <?php foreach ($resultadosBusca as $resultado): ?>
-        <div class="babel-result">
-          <strong><?php echo babel_h($resultado["titulo"]); ?></strong>
-          <div class="babel-muted">
-            Livro #<?php echo (int)$resultado["id_livro"]; ?> ·
-            Página <?php echo (int)$resultado["pagina"]; ?> ·
-            <?php echo babel_h($resultado["nome_autor"]); ?>
-          </div>
-          <a class="btn-link" href="?livro_id=<?php echo (int)$resultado["id_livro"]; ?>&pagina=<?php echo (int)$resultado["pagina"]; ?>">Abrir resultado</a>
+    <section class="babel-panel">
+      <h2>Pesquisar um texto</h2>
+      <p>Digite uma frase: o sistema calcula o endereço de uma página que a contém. Não depende de páginas já visitadas.</p>
+      <form class="babel-form" method="POST" action="livros_babel.php">
+        <input type="hidden" name="acao" value="buscar">
+        <label for="termo">Texto a procurar</label>
+        <textarea id="termo" name="termo" rows="4" placeholder="Ex.: o macaco infinito escreveu hamlet."><?php echo babel_h($termoBusca); ?></textarea>
+        <label for="modo">Onde colocar o trecho na página</label>
+        <select id="modo" name="modo">
+          <option value="aleatorio" <?php echo $modoBusca === "aleatorio" ? "selected" : ""; ?>>No meio do ruído (posição e ruído vêm da semente)</option>
+          <option value="inicio" <?php echo $modoBusca === "inicio" ? "selected" : ""; ?>>No início, resto da página em branco</option>
+          <option value="pagina" <?php echo $modoBusca === "pagina" ? "selected" : ""; ?>>Página inteira (40 linhas de 80 símbolos)</option>
+        </select>
+        <label for="semente">Semente (opcional: sementes diferentes dão endereços diferentes para o mesmo trecho)</label>
+        <input id="semente" type="text" name="semente" maxlength="64" value="<?php echo babel_h($sementeBusca); ?>">
+        <button type="submit">Calcular endereço</button>
+      </form>
+      <p class="babel-muted">O texto é normalizado: minúsculas, sem acentos; o que não for a–z, espaço, vírgula ou ponto vira espaço (! e ? viram ponto; ; e : viram vírgula).</p>
+    </section>
+
+    <section class="babel-panel">
+      <h2>Ir para um endereço</h2>
+      <form class="babel-form" method="GET" action="livros_babel.php">
+        <label for="livro">Número do livro</label>
+        <textarea id="livro" name="livro" rows="2" class="babel-endereco" placeholder="1"><?php echo babel_h($numeroTexto); ?></textarea>
+        <label for="pagina">Página (1 a 410)</label>
+        <input id="pagina" type="number" name="pagina" min="1" max="410" value="<?php echo $pagina; ?>">
+        <button type="submit">Abrir livro e página</button>
+      </form>
+      <hr>
+      <form class="babel-form" method="GET" action="livros_babel.php">
+        <label for="hexagono">…ou pelo endereço físico</label>
+        <textarea id="hexagono" name="hexagono" rows="2" class="babel-endereco" placeholder="Hexágono"><?php echo babel_h($hexagonoTexto); ?></textarea>
+        <div class="babel-inline">
+          <div><label for="parede">Parede (1–4)</label><input id="parede" type="number" name="parede" min="1" max="4" value="<?php echo (int)$endereco["parede"]; ?>"></div>
+          <div><label for="estante">Estante (1–5)</label><input id="estante" type="number" name="estante" min="1" max="5" value="<?php echo (int)$endereco["estante"]; ?>"></div>
+          <div><label for="posicao">Posição (1–32)</label><input id="posicao" type="number" name="posicao" min="1" max="32" value="<?php echo (int)$endereco["posicao"]; ?>"></div>
         </div>
-      <?php endforeach; ?>
-    <?php endif; ?>
-  </section>
+        <input type="hidden" name="pagina" value="1">
+        <button type="submit">Ir ao endereço físico</button>
+      </form>
+    </section>
 
-  <section class="babel-panel">
-    <h3>Como o índice funciona</h3>
+  </div>
+
+  <!-- 3. SOBRE: recolhido por padrão -->
+  <details>
+    <summary>Como funciona</summary>
     <ul>
-      <li>O catálogo lógico inicial possui 10.000 livros, cada um com 410 páginas.</li>
-      <li>Uma página é indexada automaticamente quando é aberta.</li>
-      <li>A busca por trecho procura dentro das páginas armazenadas no índice.</li>
-      <li>A busca por página inteira exige correspondência exata após normalizar quebras de linha e espaços finais.</li>
-      <li>O texto é gerado deterministicamente: livro e página iguais produzem o mesmo conteúdo.</li>
+      <li>Existem 29<sup>3200</sup> páginas distintas e cada uma tem um único endereço (livro e página).</li>
+      <li>O texto de uma página é uma função reversível do endereço (rede de Feistel sobre SHA-256): do endereço sai o texto, e do texto sai o endereço.</li>
+      <li>Por isso a pesquisa é só uma conta: ela escreve a página desejada e calcula o endereço. A busca por um trecho acha uma entre incontáveis páginas que o contêm.</li>
+      <li>Um livro são 410 páginas de índices consecutivos; o último livro da biblioteca tem só 1 página.</li>
+      <li>Título, autor e ano de qualquer livro são procedurais até que um registro em <code>tbl_livro</code> os sobreponha.</li>
     </ul>
-    <p class="babel-muted">A ausência de resultados não prova que o trecho não exista nos livros ainda não visitados.</p>
-  </section>
+  </details>
+
 </main>
 </body>
 </html>
